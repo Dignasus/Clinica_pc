@@ -32,9 +32,10 @@ export default function Login() {
     const usuarioIngresado = credenciales.usuario.toLowerCase().trim();
     
     if (usuariosMock[usuarioIngresado] && credenciales.password === '123') {
+      sessionStorage.setItem('authToken', 'sesion-activa'); // Sim
       sessionStorage.setItem('userRol', usuariosMock[usuarioIngresado].rol);
       sessionStorage.setItem('userNombre', usuariosMock[usuarioIngresado].nombre);
-      navigate('/panel');
+      navigate('/panel', { replace: true });
     } else {
       setError('Credenciales inválidas. Revise su usuario y contraseña.');
     }
