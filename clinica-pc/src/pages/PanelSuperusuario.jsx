@@ -11,6 +11,9 @@ import logoInacap from '../assets/logo-inacap.png';
 export default function PanelSuperusuario() {
   const [vistaActiva, setVistaActiva] = useState('recepcion');
   const [periodoGlobal, setPeriodoGlobal] = useState('Otoño 2026');
+  // Nuevo estado para controlar el tema
+  const [modoOscuro, setModoOscuro] = useState(false);
+  
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -20,22 +23,28 @@ export default function PanelSuperusuario() {
 
   const renderizarContenido = () => {
     switch (vistaActiva) {
-      case 'inscripcion': return <InscripcionQR />;
-      case 'recepcion': return <RecepcionEquipos />;
-      case 'tecnico': return <PanelTecnico />;
-      case 'historial': return <HistorialConsultas />;
-      case 'parametros': return <ParametrosMantenedores />;
+      case 'inscripcion': return <InscripcionQR modoOscuro={modoOscuro} />;
+      case 'recepcion': return <RecepcionEquipos modoOscuro={modoOscuro} />;
+      case 'tecnico': return <PanelTecnico modoOscuro={modoOscuro} />;
+      case 'historial': return <HistorialConsultas modoOscuro={modoOscuro} />;
+      case 'parametros': return <ParametrosMantenedores modoOscuro={modoOscuro} />;
       default: return <div>Seleccione una fase</div>;
     }
   };
 
+  // Alterna el modo visual
+  const toggleTema = () => {
+    setModoOscuro(!modoOscuro);
+  };
+
   return (
-    <Container fluid className="vh-100 d-flex flex-column p-0">
+    // Agregamos data-bs-theme al contenedor principal
+    <Container fluid className="vh-100 d-flex flex-column p-0" data-bs-theme={modoOscuro ? 'dark' : 'light'}>
       <Row className="flex-nowrap h-100 g-0">
         
         {/* Barra Lateral */}
-        <Col xs="auto" md={3} lg={2} className="d-flex flex-column" style={{ backgroundColor: '#333333' }}>
-          <div className="p-4 text-center bg-white" style={{ borderBottom: '4px solid #cc0000' }}>
+        <Col xs="auto" md={3} lg={2} className="d-flex flex-column border-end" style={{ backgroundColor: modoOscuro ? '#212529' : '#333333' }}>
+          <div className="p-4 text-center" style={{ backgroundColor: modoOscuro ? '#1a1d20' : '#ffffff', borderBottom: '4px solid #cc0000' }}>
             <img src={logoInacap} alt="Logo INACAP" className="img-fluid mb-3" style={{ maxWidth: '85%' }} />
             <h5 className="fw-bold mb-1" style={{ color: '#cc0000' }}>Clínica del PC</h5>
             <Badge bg="secondary" className="fw-normal">Superusuario</Badge>
@@ -47,7 +56,7 @@ export default function PanelSuperusuario() {
               <Nav.Link 
                 active={vistaActiva === 'inscripcion'} 
                 onClick={() => setVistaActiva('inscripcion')}
-                className={vistaActiva === 'inscripcion' ? 'bg-light text-dark fw-bold border-start border-danger border-4 rounded-0' : 'text-light'}
+                className={vistaActiva === 'inscripcion' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}
               >
                 1. Inscripción (QR)
               </Nav.Link>
@@ -56,7 +65,7 @@ export default function PanelSuperusuario() {
               <Nav.Link 
                 active={vistaActiva === 'recepcion'} 
                 onClick={() => setVistaActiva('recepcion')}
-                className={vistaActiva === 'recepcion' ? 'bg-light text-dark fw-bold border-start border-danger border-4 rounded-0' : 'text-light'}
+                className={vistaActiva === 'recepcion' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}
               >
                 2. Recepción de Equipos
               </Nav.Link>
@@ -65,7 +74,7 @@ export default function PanelSuperusuario() {
               <Nav.Link 
                 active={vistaActiva === 'tecnico'} 
                 onClick={() => setVistaActiva('tecnico')}
-                className={vistaActiva === 'tecnico' ? 'bg-light text-dark fw-bold border-start border-danger border-4 rounded-0' : 'text-light'}
+                className={vistaActiva === 'tecnico' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}
               >
                 3. Panel Técnico
               </Nav.Link>
@@ -74,7 +83,7 @@ export default function PanelSuperusuario() {
               <Nav.Link 
                 active={vistaActiva === 'historial'} 
                 onClick={() => setVistaActiva('historial')}
-                className={vistaActiva === 'historial' ? 'bg-light text-dark fw-bold border-start border-danger border-4 rounded-0' : 'text-light'}
+                className={vistaActiva === 'historial' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}
               >
                 4. Historial y Consultas
               </Nav.Link>
@@ -85,7 +94,7 @@ export default function PanelSuperusuario() {
               <Nav.Link 
                 active={vistaActiva === 'parametros'} 
                 onClick={() => setVistaActiva('parametros')}
-                className={vistaActiva === 'parametros' ? 'bg-light text-dark fw-bold border-start border-danger border-4 rounded-0' : 'text-light'}
+                className={vistaActiva === 'parametros' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}
               >
                 Parámetros y Mantenedores
               </Nav.Link>
@@ -94,16 +103,18 @@ export default function PanelSuperusuario() {
         </Col>
 
         {/* Contenido Principal */}
-        <Col className="d-flex flex-column p-0" style={{ backgroundColor: '#f4f4f4' }}>
+        <Col className="d-flex flex-column p-0" style={{ backgroundColor: modoOscuro ? '#121212' : '#f4f4f4' }}>
           
           {/* Cabecera Superior */}
-          <Navbar bg="white" className="px-4 py-3 shadow-sm justify-content-between">
+          <Navbar bg={modoOscuro ? 'dark' : 'white'} className="px-4 py-3 border-bottom justify-content-between">
             <Form className="d-flex align-items-center">
-              <Form.Label className="fw-bold text-dark me-3 mb-0">Período Activo:</Form.Label>
+              <Form.Label className={`fw-bold me-3 mb-0 ${modoOscuro ? 'text-light' : 'text-dark'}`}>
+                Período Activo:
+              </Form.Label>
               <Form.Select 
                 value={periodoGlobal} 
                 onChange={(e) => setPeriodoGlobal(e.target.value)}
-                className="w-auto shadow-none border-secondary"
+                className={`w-auto shadow-none ${modoOscuro ? 'bg-dark text-light border-secondary' : 'border-secondary'}`}
               >
                 <option value="Otoño 2026">Otoño 2026</option>
                 <option value="Primavera 2026">Primavera 2026</option>
@@ -111,9 +122,21 @@ export default function PanelSuperusuario() {
                 <option value="Todos">Todos los períodos</option>
               </Form.Select>
             </Form>
-            <Button variant="dark" onClick={handleLogout} className="fw-bold px-4">
-              Cerrar Sesión
-            </Button>
+            
+            <div className="d-flex align-items-center gap-3">
+              {/* Botón para alternar temas con color dinámico */}
+              <Form.Check 
+                type="switch"
+                id="tema-switch"
+                label={modoOscuro ? 'Modo Oscuro' : 'Modo Claro'}
+                checked={modoOscuro}
+                onChange={toggleTema}
+                className={`fw-bold ${modoOscuro ? 'text-light' : 'text-dark'}`}
+              />
+              <Button variant="danger" onClick={handleLogout} className="fw-bold px-4">
+                Cerrar Sesión
+              </Button>
+            </div>
           </Navbar>
 
           {/* Área Dinámica */}
