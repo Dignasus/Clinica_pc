@@ -7,6 +7,7 @@ import RecepcionEquipos from '../components/RecepcionEquipos';
 import PanelTecnico from '../components/PanelTecnico';
 import HistorialConsultas from '../components/HistorialConsultas';
 import ParametrosMantenedores from '../components/ParametrosMantenedores';
+import EncuestaSatisfaccion from '../components/EncuestaSatisfaccion';
 import logoInacap from '../assets/logo-inacap.png';
 
 export default function PanelSuperusuario() {
@@ -48,6 +49,7 @@ export default function PanelSuperusuario() {
       case 'tecnico': return <PanelTecnico modoOscuro={modoOscuro} />;
       case 'historial': return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
       case 'parametros': return <ParametrosMantenedores modoOscuro={modoOscuro} />;
+      case 'encuesta': return <EncuestaSatisfaccion modoOscuro={modoOscuro} />;
       default: return <div>Seleccione una fase</div>;
     }
   };
@@ -79,7 +81,7 @@ export default function PanelSuperusuario() {
             {puedeVerInicio && (
               <Nav.Item className="mb-3">
                 <Nav.Link active={vistaActiva === 'inicio'} onClick={() => setVistaActiva('inicio')} className={vistaActiva === 'inicio' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  🏠 Inicio
+                  Inicio
                 </Nav.Link>
               </Nav.Item>
             )}
@@ -90,6 +92,14 @@ export default function PanelSuperusuario() {
               <Nav.Item>
                 <Nav.Link active={vistaActiva === 'inscripcion'} onClick={() => setVistaActiva('inscripcion')} className={vistaActiva === 'inscripcion' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
                   1. Inscripción (QR)
+                </Nav.Link>
+              </Nav.Item>
+            )}
+
+            {['superusuario', 'cliente'].includes(rolUsuario) && (
+              <Nav.Item>
+                <Nav.Link active={vistaActiva === 'encuesta'} onClick={() => setVistaActiva('encuesta')} className={vistaActiva === 'encuesta' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
+                  ★ Evaluar Servicio
                 </Nav.Link>
               </Nav.Item>
             )}
