@@ -1,35 +1,63 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Form, Row, Col, Button, Table, Badge } from 'react-bootstrap';
 
-export default function HistorialConsultas({ modoOscuro }) {
+// Recibimos periodoGlobal como prop desde el panel principal
+export default function HistorialConsultas({ modoOscuro, periodoGlobal }) {
   const [filtros, setFiltros] = useState({ busquedaGeneral: '', fechaInicio: '', fechaFin: '' });
 
+  // Agregamos la propiedad "periodo" a los datos simulados
   const historialMock = [
-    { id: 1, fecha: '2025-10-15', rut: '11222333-4', propietario: 'Luis Pérez', equipo: 'HP Pavilion', servicio: 'Formateo', tecnico: 'Matías Carrasco', estado: 'Entregado' },
-    { id: 2, fecha: '2025-10-16', rut: '44555666-7', propietario: 'Ana Soto', equipo: 'Dell Inspiron', servicio: 'Mantención Física', tecnico: 'Cristian', estado: 'Entregado' },
-    { id: 3, fecha: '2026-04-10', rut: '12345678-9', propietario: 'Camila Rojas', equipo: 'Asus ZenBook', servicio: 'Mantención Lógica', tecnico: 'Matías Carrasco', estado: 'Entregado' }
+    { id: 1, fecha: '2025-10-15', periodo: 'Otoño 2025', rut: '11222333-4', propietario: 'Luis Pérez', equipo: 'HP Pavilion', servicio: 'Formateo', tecnico: 'Matías Carrasco', estado: 'Entregado' },
+    { id: 2, fecha: '2025-10-16', periodo: 'Otoño 2025', rut: '44555666-7', propietario: 'Ana Soto', equipo: 'Dell Inspiron', servicio: 'Mantención Física', tecnico: 'Cristian', estado: 'Entregado' },
+    { id: 3, fecha: '2026-04-10', periodo: 'Otoño 2026', rut: '12345678-9', propietario: 'Camila Rojas', equipo: 'Asus ZenBook', servicio: 'Mantención Lógica', tecnico: 'Matías Carrasco', estado: 'Entregado' }
   ];
 
-  const [resultados, setResultados] = useState(historialMock);
+  const [resultados, setResultados] = useState([]);
+
+  // Centralizamos la lógica de filtrado
+  const aplicarFiltros = () => {
+    const termino = filtros.busquedaGeneral.toLowerCase();
+    
+    const datosFiltrados = historialMock.filter(registro => {
+      // 1. Filtrar por el selector del menú principal de arriba
+      const coincidePeriodo = periodoGlobal === 'Todos' || registro.periodo === periodoGlobal;
+
+      // 2. Filtrar por texto (AHORA INCLUYE LA FECHA)
+      const coincideTexto = 
+        registro.rut.toLowerCase().includes(termino) || 
+        registro.propietario.toLowerCase().includes(termino) || 
+        registro.tecnico.toLowerCase().includes(termino) || 
+        registro.equipo.toLowerCase().includes(termino) || 
+        registro.servicio.toLowerCase().includes(termino) ||
+        registro.fecha.includes(termino); // Magia para que busque años
+
+      // 3. Filtrar por rango de fechas
+      let coincideFecha = true;
+      const fechaRegistro = new Date(registro.fecha);
+      if (filtros.fechaInicio) coincideFecha = coincideFecha && fechaRegistro >= new Date(filtros.fechaInicio);
+      if (filtros.fechaFin) coincideFecha = coincideFecha && fechaRegistro <= new Date(filtros.fechaFin);
+
+      return coincidePeriodo && coincideTexto && coincideFecha;
+    });
+    
+    setResultados(datosFiltrados);
+  };
+
+  // Se ejecuta automáticamente si cambias el "Período Activo" en el menú de arriba
+  useEffect(() => {
+    // Solo filtra si periodoGlobal ya cargó (por si acaso)
+    if (periodoGlobal) aplicarFiltros();
+  }, [periodoGlobal]); // eslint-disable-line
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFiltros(prev => ({ ...prev, [name]: value }));
   };
 
+  // Se ejecuta si el usuario aprieta el botón de buscar
   const handleBuscar = (e) => {
     e.preventDefault();
-    const termino = filtros.busquedaGeneral.toLowerCase();
-    
-    const datosFiltrados = historialMock.filter(registro => {
-      const coincideTexto = registro.rut.toLowerCase().includes(termino) || registro.propietario.toLowerCase().includes(termino) || registro.tecnico.toLowerCase().includes(termino) || registro.equipo.toLowerCase().includes(termino) || registro.servicio.toLowerCase().includes(termino);
-      let coincideFecha = true;
-      const fechaRegistro = new Date(registro.fecha);
-      if (filtros.fechaInicio) coincideFecha = coincideFecha && fechaRegistro >= new Date(filtros.fechaInicio);
-      if (filtros.fechaFin) coincideFecha = coincideFecha && fechaRegistro <= new Date(filtros.fechaFin);
-      return coincideTexto && coincideFecha;
-    });
-    setResultados(datosFiltrados);
+    aplicarFiltros();
   };
 
   const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
@@ -49,7 +77,7 @@ export default function HistorialConsultas({ modoOscuro }) {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="fw-bold">Búsqueda General</Form.Label>
-                  <Form.Control type="text" name="busquedaGeneral" value={filtros.busquedaGeneral} onChange={handleChange} placeholder="RUT, nombre, técnico..." className={modoOscuro ? 'bg-dark text-light' : ''} />
+                  <Form.Control type="text" name="busquedaGeneral" value={filtros.busquedaGeneral} onChange={handleChange} placeholder="RUT, nombre, técnico, año..." className={modoOscuro ? 'bg-dark text-light' : ''} />
                 </Form.Group>
               </Col>
               <Col md={2}>
@@ -100,7 +128,7 @@ export default function HistorialConsultas({ modoOscuro }) {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="7" className="text-center py-4 text-muted">No se encontraron registros.</td></tr>
+                <tr><td colSpan="7" className="text-center py-4 text-muted">No se encontraron registros en este período.</td></tr>
               )}
             </tbody>
           </Table>

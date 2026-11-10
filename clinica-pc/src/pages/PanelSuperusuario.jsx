@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Nav, Navbar, Form, Button } from 'react-bootstrap';
+import InicioDashboard from '../components/InicioDashboard';
 import InscripcionQR from '../components/InscripcionQR';
 import RecepcionEquipos from '../components/RecepcionEquipos';
 import PanelTecnico from '../components/PanelTecnico';
@@ -16,6 +17,7 @@ export default function PanelSuperusuario() {
   const [periodoGlobal, setPeriodoGlobal] = useState('Otoño 2026');
   const [modoOscuro, setModoOscuro] = useState(false);
 
+  // Validación de seguridad al entrar al panel
   useEffect(() => {
     const rol = sessionStorage.getItem('userRol');
     const nombre = sessionStorage.getItem('userNombre');
@@ -28,9 +30,9 @@ export default function PanelSuperusuario() {
     setRolUsuario(rol);
     setNombreUsuario(nombre);
 
+    // Asignación de pantalla por defecto según rol
     if (rol === 'cliente') setVistaActiva('inscripcion');
-    else if (rol === 'tecnico') setVistaActiva('tecnico');
-    else setVistaActiva('recepcion');
+    else setVistaActiva('inicio');
   }, [navigate]);
 
   const handleLogout = () => {
@@ -40,10 +42,11 @@ export default function PanelSuperusuario() {
 
   const renderizarContenido = () => {
     switch (vistaActiva) {
+      case 'inicio': return <InicioDashboard modoOscuro={modoOscuro} rolUsuario={rolUsuario} nombreUsuario={nombreUsuario} />;
       case 'inscripcion': return <InscripcionQR modoOscuro={modoOscuro} />;
       case 'recepcion': return <RecepcionEquipos modoOscuro={modoOscuro} />;
       case 'tecnico': return <PanelTecnico modoOscuro={modoOscuro} />;
-      case 'historial': return <HistorialConsultas modoOscuro={modoOscuro} />;
+      case 'historial': return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
       case 'parametros': return <ParametrosMantenedores modoOscuro={modoOscuro} />;
       default: return <div>Seleccione una fase</div>;
     }
@@ -51,6 +54,9 @@ export default function PanelSuperusuario() {
 
   const toggleTema = () => setModoOscuro(!modoOscuro);
 
+  // Permisos dinámicos para mostrar u ocultar menús laterales
+  const puedeVerInicio = ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario);
+  const puedeVerInscripcion = ['superusuario', 'cliente', 'recepcionista'].includes(rolUsuario);
   const puedeVerRecepcion = ['superusuario', 'recepcionista'].includes(rolUsuario);
   const puedeVerTecnico = ['superusuario', 'tecnico'].includes(rolUsuario);
   const puedeVerHistorial = ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario);
@@ -60,18 +66,27 @@ export default function PanelSuperusuario() {
     <Container fluid className="vh-100 d-flex flex-column p-0" data-bs-theme={modoOscuro ? 'dark' : 'light'}>
       <Row className="flex-nowrap h-100 g-0">
         
-        {/* Barra Lateral */}
+        {/* Barra Lateral Dinámica */}
         <Col xs="auto" md={3} lg={2} className="d-flex flex-column border-end" style={{ backgroundColor: modoOscuro ? '#212529' : '#333333' }}>
           <div className="p-4 text-center" style={{ backgroundColor: modoOscuro ? '#1a1d20' : '#ffffff', borderBottom: '4px solid #cc0000' }}>
             <img src={logoInacap} alt="Logo INACAP" className="img-fluid mb-3" style={{ maxWidth: '85%' }} />
+            {/* Solo mostramos el nombre del usuario logueado */}
             <h6 className="fw-bold mb-0" style={{ color: '#cc0000' }}>{nombreUsuario}</h6>
-            {/* El rol fue eliminado de la vista como solicitaste */}
           </div>
 
           <Nav variant="pills" className="flex-column mt-4 px-2">
+            
+            {puedeVerInicio && (
+              <Nav.Item className="mb-3">
+                <Nav.Link active={vistaActiva === 'inicio'} onClick={() => setVistaActiva('inicio')} className={vistaActiva === 'inicio' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
+                  🏠 Inicio
+                </Nav.Link>
+              </Nav.Item>
+            )}
+
             <p className="text-secondary small fw-bold px-3 mb-2">FASES DEL SERVICIO</p>
             
-            {['superusuario', 'cliente', 'recepcionista'].includes(rolUsuario) && (
+            {puedeVerInscripcion && (
               <Nav.Item>
                 <Nav.Link active={vistaActiva === 'inscripcion'} onClick={() => setVistaActiva('inscripcion')} className={vistaActiva === 'inscripcion' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
                   1. Inscripción (QR)
@@ -119,6 +134,7 @@ export default function PanelSuperusuario() {
         {/* Contenido Principal */}
         <Col className="d-flex flex-column p-0" style={{ backgroundColor: modoOscuro ? '#121212' : '#f4f4f4' }}>
           <Navbar bg={modoOscuro ? 'dark' : 'white'} className="px-4 py-3 border-bottom justify-content-between">
+            {/* Ocultamos el filtro de periodo si es un cliente invitado */}
             {rolUsuario !== 'cliente' ? (
               <Form className="d-flex align-items-center">
                 <Form.Label className={`fw-bold me-3 mb-0 ${modoOscuro ? 'text-light' : 'text-dark'}`}>Período Activo:</Form.Label>
