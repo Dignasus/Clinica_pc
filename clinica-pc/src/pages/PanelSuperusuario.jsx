@@ -1,6 +1,12 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Nav, Navbar, Form, Button } from 'react-bootstrap';
+import { Offcanvas } from 'react-bootstrap';
+
+import { useClinica } from '../context/clinicaContextBase.js';
+
+import Sidebar from '../components/layout/Sidebar';
+import Header from '../components/layout/Header';
 import InicioDashboard from '../components/InicioDashboard';
 import InscripcionQR from '../components/InscripcionQR';
 import RecepcionEquipos from '../components/RecepcionEquipos';
@@ -8,166 +14,192 @@ import PanelTecnico from '../components/PanelTecnico';
 import HistorialConsultas from '../components/HistorialConsultas';
 import ParametrosMantenedores from '../components/ParametrosMantenedores';
 import EncuestaSatisfaccion from '../components/EncuestaSatisfaccion';
-import logoInacap from '../assets/logo-inacap.png';
 
 export default function PanelSuperusuario() {
   const navigate = useNavigate();
-  const [rolUsuario, setRolUsuario] = useState('');
-  const [nombreUsuario, setNombreUsuario] = useState('');
-  const [vistaActiva, setVistaActiva] = useState('');
-  const [periodoGlobal, setPeriodoGlobal] = useState('Otoño 2026');
+  const { datos } = useClinica();
+
+  // Sesión del usuario
+  const [sesion] = useState(() => ({
+    rol: sessionStorage.getItem('userRol') || '',
+    nombre: sessionStorage.getItem('userNombre') || '',
+  }));
+
+  const rolUsuario = sesion.rol;
+  const nombreUsuario = sesion.nombre;
+
+  // Navegación y apariencia
+  const [vistaActiva, setVistaActiva] = useState(() =>
+    sesion.rol === 'cliente' ? 'inscripcion' : 'inicio'
+  );
   const [modoOscuro, setModoOscuro] = useState(false);
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState('');
 
-  // Validación de seguridad al entrar al panel
+  // Períodos obtenidos de las jornadas, sin duplicados.
+  // Ordenados desde la jornada más reciente.
+  const periodosDisponibles = [
+    ...new Set(
+      [...datos.jornadas]
+        .sort((a, b) => b.fecha.localeCompare(a.fecha))
+        .map((jornada) => jornada.periodo)
+        .filter(Boolean)
+    ),
+  ];
+
+  // Selección válida o período más reciente por defecto.
+  const periodoGlobal =
+    periodoSeleccionado === 'Todos' ||
+    periodosDisponibles.includes(periodoSeleccionado)
+      ? periodoSeleccionado
+      : (periodosDisponibles[0] ?? 'Todos');
+
+  const opcionesPeriodo = ['Todos', ...periodosDisponibles];
+
+  // Verificación básica de sesión del prototipo
   useEffect(() => {
-    const rol = sessionStorage.getItem('userRol');
-    const nombre = sessionStorage.getItem('userNombre');
-    
-    if (!rol) {
-      navigate('/');
-      return;
-    }
-    
-    setRolUsuario(rol);
-    setNombreUsuario(nombre);
-
-    // Asignación de pantalla por defecto según rol
-    if (rol === 'cliente') setVistaActiva('inscripcion');
-    else setVistaActiva('inicio');
-  }, [navigate]);
+    if (!rolUsuario) navigate('/', { replace: true });
+  }, [rolUsuario, navigate]);
 
   const handleLogout = () => {
     sessionStorage.clear();
     navigate('/');
   };
 
+  const cambiarVista = (vista) => {
+    setVistaActiva(vista);
+    setMenuMovilAbierto(false);
+  };
+
+  const toggleTema = () => setModoOscuro((actual) => !actual);
+
+  // Permisos de visualización del prototipo
+  const permisos = {
+    inicio: ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario),
+    inscripcion: ['superusuario', 'cliente', 'recepcionista'].includes(rolUsuario),
+    recepcion: ['superusuario', 'recepcionista'].includes(rolUsuario),
+    tecnico: ['superusuario', 'tecnico'].includes(rolUsuario),
+    historial: ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario),
+    parametros: rolUsuario === 'superusuario',
+    encuesta: ['superusuario', 'cliente'].includes(rolUsuario),
+  };
+
+  // Renderizado de los módulos
   const renderizarContenido = () => {
+    if (!permisos[vistaActiva]) {
+      return <div>No tienes acceso a esta sección.</div>;
+    }
+
     switch (vistaActiva) {
-      case 'inicio': return <InicioDashboard modoOscuro={modoOscuro} rolUsuario={rolUsuario} nombreUsuario={nombreUsuario} />;
-      case 'inscripcion': return <InscripcionQR modoOscuro={modoOscuro} />;
-      case 'recepcion': return <RecepcionEquipos modoOscuro={modoOscuro} />;
-      case 'tecnico': return <PanelTecnico modoOscuro={modoOscuro} />;
-      case 'historial': return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
-      case 'parametros': return <ParametrosMantenedores modoOscuro={modoOscuro} />;
-      case 'encuesta': return <EncuestaSatisfaccion modoOscuro={modoOscuro} />;
-      default: return <div>Seleccione una fase</div>;
+      case 'inicio':
+        return (
+          <InicioDashboard
+            modoOscuro={modoOscuro}
+            rolUsuario={rolUsuario}
+            nombreUsuario={nombreUsuario}
+            periodoGlobal={periodoGlobal}
+          />
+        );
+
+      case 'inscripcion':
+        return <InscripcionQR modoOscuro={modoOscuro} />;
+
+      case 'recepcion':
+        return (
+          <RecepcionEquipos
+            modoOscuro={modoOscuro}
+            periodoGlobal={periodoGlobal}
+          />
+        );
+
+      case 'tecnico':
+        return (
+          <PanelTecnico
+            modoOscuro={modoOscuro}
+            periodoGlobal={periodoGlobal}
+          />
+        );
+
+      case 'historial':
+        return (
+          <HistorialConsultas
+            modoOscuro={modoOscuro}
+            periodoGlobal={periodoGlobal}
+          />
+        );
+
+      case 'parametros':
+        return <ParametrosMantenedores modoOscuro={modoOscuro} />;
+
+      case 'encuesta':
+        return <EncuestaSatisfaccion modoOscuro={modoOscuro} />;
+
+      default:
+        return <div>Seleccione una fase.</div>;
     }
   };
 
-  const toggleTema = () => setModoOscuro(!modoOscuro);
-
-  // Permisos dinámicos para mostrar u ocultar menús laterales
-  const puedeVerInicio = ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario);
-  const puedeVerInscripcion = ['superusuario', 'cliente', 'recepcionista'].includes(rolUsuario);
-  const puedeVerRecepcion = ['superusuario', 'recepcionista'].includes(rolUsuario);
-  const puedeVerTecnico = ['superusuario', 'tecnico'].includes(rolUsuario);
-  const puedeVerHistorial = ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario);
-  const puedeVerParametros = ['superusuario'].includes(rolUsuario);
+  const propiedadesSidebar = {
+    nombreUsuario,
+    vistaActiva,
+    permisos,
+    onSeleccionar: cambiarVista,
+  };
 
   return (
-    <Container fluid className="vh-100 d-flex flex-column p-0" data-bs-theme={modoOscuro ? 'dark' : 'light'}>
-      <Row className="flex-nowrap h-100 g-0">
-        
-        {/* Barra Lateral Dinámica */}
-        <Col xs="auto" md={3} lg={2} className="d-flex flex-column border-end" style={{ backgroundColor: modoOscuro ? '#212529' : '#333333' }}>
-          <div className="p-4 text-center" style={{ backgroundColor: modoOscuro ? '#1a1d20' : '#ffffff', borderBottom: '4px solid #cc0000' }}>
-            <img src={logoInacap} alt="Logo INACAP" className="img-fluid mb-3" style={{ maxWidth: '85%' }} />
-            {/* Solo mostramos el nombre del usuario logueado */}
-            <h6 className="fw-bold mb-0" style={{ color: '#cc0000' }}>{nombreUsuario}</h6>
-          </div>
+    <div
+      data-bs-theme={modoOscuro ? 'dark' : 'light'}
+      className={`flex min-h-screen ${
+        modoOscuro ? 'bg-[#121212] text-white' : 'bg-[#f4f4f4] text-gray-900'
+      }`}
+    >
+      {/* Navegación de escritorio */}
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto md:block">
+        <Sidebar {...propiedadesSidebar} />
+      </aside>
 
-          <Nav variant="pills" className="flex-column mt-4 px-2">
-            
-            {puedeVerInicio && (
-              <Nav.Item className="mb-3">
-                <Nav.Link active={vistaActiva === 'inicio'} onClick={() => setVistaActiva('inicio')} className={vistaActiva === 'inicio' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  Inicio
-                </Nav.Link>
-              </Nav.Item>
-            )}
+      {/* Contenido principal */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Header
+          rolUsuario={rolUsuario}
+          periodoGlobal={periodoGlobal}
+          periodosDisponibles={opcionesPeriodo}
+          onPeriodoChange={setPeriodoSeleccionado}
+          modoOscuro={modoOscuro}
+          onToggleTema={toggleTema}
+          onSalir={handleLogout}
+          onAbrirMenu={() => setMenuMovilAbierto(true)}
+          menuMovilAbierto={menuMovilAbierto}
+        />
 
-            <p className="text-secondary small fw-bold px-3 mb-2">FASES DEL SERVICIO</p>
-            
-            {puedeVerInscripcion && (
-              <Nav.Item>
-                <Nav.Link active={vistaActiva === 'inscripcion'} onClick={() => setVistaActiva('inscripcion')} className={vistaActiva === 'inscripcion' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  1. Inscripción (QR)
-                </Nav.Link>
-              </Nav.Item>
-            )}
+        <main className="min-w-0 w-full flex-1 overflow-x-auto p-4 md:p-6">
+          {renderizarContenido()}
+        </main>
+      </div>
 
-            {['superusuario', 'cliente'].includes(rolUsuario) && (
-              <Nav.Item>
-                <Nav.Link active={vistaActiva === 'encuesta'} onClick={() => setVistaActiva('encuesta')} className={vistaActiva === 'encuesta' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  ★ Evaluar Servicio
-                </Nav.Link>
-              </Nav.Item>
-            )}
+      {/* Navegación móvil */}
+      <Offcanvas
+        show={menuMovilAbierto}
+        onHide={() => setMenuMovilAbierto(false)}
+        placement="start"
+        backdrop
+        scroll={false}
+        keyboard
+        restoreFocus
+        aria-labelledby="titulo-menu-movil"
+        data-bs-theme="dark"
+        style={{ '--bs-offcanvas-width': 'min(18rem, 85vw)' }}
+      >
+        <Offcanvas.Header closeButton className="bg-[#333333] text-white">
+          <Offcanvas.Title id="titulo-menu-movil">
+            Menú de navegación
+          </Offcanvas.Title>
+        </Offcanvas.Header>
 
-            {puedeVerRecepcion && (
-              <Nav.Item>
-                <Nav.Link active={vistaActiva === 'recepcion'} onClick={() => setVistaActiva('recepcion')} className={vistaActiva === 'recepcion' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  2. Recepción de Equipos
-                </Nav.Link>
-              </Nav.Item>
-            )}
-
-            {puedeVerTecnico && (
-              <Nav.Item>
-                <Nav.Link active={vistaActiva === 'tecnico'} onClick={() => setVistaActiva('tecnico')} className={vistaActiva === 'tecnico' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  3. Panel Técnico
-                </Nav.Link>
-              </Nav.Item>
-            )}
-
-            {puedeVerHistorial && (
-              <Nav.Item>
-                <Nav.Link active={vistaActiva === 'historial'} onClick={() => setVistaActiva('historial')} className={vistaActiva === 'historial' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                  4. Historial y Consultas
-                </Nav.Link>
-              </Nav.Item>
-            )}
-
-            {puedeVerParametros && (
-              <>
-                <p className="text-secondary small fw-bold px-3 mb-2 mt-4">ADMINISTRACIÓN</p>
-                <Nav.Item>
-                  <Nav.Link active={vistaActiva === 'parametros'} onClick={() => setVistaActiva('parametros')} className={vistaActiva === 'parametros' ? 'bg-danger text-white fw-bold rounded-0' : 'text-light'}>
-                    Parámetros y Mantenedores
-                  </Nav.Link>
-                </Nav.Item>
-              </>
-            )}
-          </Nav>
-        </Col>
-
-        {/* Contenido Principal */}
-        <Col className="d-flex flex-column p-0" style={{ backgroundColor: modoOscuro ? '#121212' : '#f4f4f4' }}>
-          <Navbar bg={modoOscuro ? 'dark' : 'white'} className="px-4 py-3 border-bottom justify-content-between">
-            {/* Ocultamos el filtro de periodo si es un cliente invitado */}
-            {rolUsuario !== 'cliente' ? (
-              <Form className="d-flex align-items-center">
-                <Form.Label className={`fw-bold me-3 mb-0 ${modoOscuro ? 'text-light' : 'text-dark'}`}>Período Activo:</Form.Label>
-                <Form.Select value={periodoGlobal} onChange={(e) => setPeriodoGlobal(e.target.value)} className={`w-auto shadow-none ${modoOscuro ? 'bg-dark text-light border-secondary' : 'border-secondary'}`}>
-                  <option value="Otoño 2026">Otoño 2026</option>
-                  <option value="Primavera 2026">Primavera 2026</option>
-                  <option value="Todos">Todos los períodos</option>
-                </Form.Select>
-              </Form>
-            ) : <div></div>}
-            
-            <div className="d-flex align-items-center gap-3">
-              <Form.Check type="switch" id="tema-switch" label={modoOscuro ? 'Modo Oscuro' : 'Modo Claro'} checked={modoOscuro} onChange={toggleTema} className={`fw-bold ${modoOscuro ? 'text-light' : 'text-dark'}`} />
-              <Button variant="danger" onClick={handleLogout} className="fw-bold px-4">Salir</Button>
-            </div>
-          </Navbar>
-
-          <div className="p-4 overflow-auto flex-grow-1">
-            {renderizarContenido()}
-          </div>
-        </Col>
-
-      </Row>
-    </Container>
+        <Offcanvas.Body className="p-0">
+          <Sidebar {...propiedadesSidebar} />
+        </Offcanvas.Body>
+      </Offcanvas>
+    </div>
   );
 }

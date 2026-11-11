@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Form, Button, Alert, Row, Col } from 'react-bootstrap';
+import { Card, Form, Button, Alert } from 'react-bootstrap';
 
 export default function EncuestaSatisfaccion({ modoOscuro }) {
   const [enviado, setEnviado] = useState(false);

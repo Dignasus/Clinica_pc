@@ -1,155 +1,227 @@
+
 import { useState } from 'react';
-import { Card, Form, Row, Col, Button, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Card, Form, Button, Alert } from 'react-bootstrap';
+import DatosPersonales from './inscripcion/DatosPersonales.jsx';
+import DatosEquipo from './inscripcion/DatosEquipo.jsx';
+import TerminosLegales from './inscripcion/TerminosLegales.jsx';
+import { useClinica } from '../context/clinicaContextBase.js';
+import { normalizarRut, validarRut } from '../utils/rut.js';
+import { jornadaPermiteInscripcion, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
+
+const formularioInicial = {
+  rut: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '',
+  telefono: '', correo: '', comuna: '', sector: '',
+  marcaEquipo: '', modeloEquipo: '', numeroSerie: '', diagnosticoPropietario: '',
+  servicios: { formateo: false, mantencionFisica: false, mantencionLogica: false },
+  aceptaTerminos: false,
+};
 
 export default function InscripcionQR({ modoOscuro }) {
-  const [formData, setFormData] = useState({
-    rut: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '',
-    telefono: '', correo: '', comuna: '', sector: '',
-    marcaEquipo: '', modeloEquipo: '', numeroSerie: '', diagnosticoPropietario: '',
-    servicios: { formateo: false, mantencionFisica: false, mantencionLogica: false },
-    aceptaTerminos: false
-  });
+  const { datos, dispatch } = useClinica();
+  const [formData, setFormData] = useState(formularioInicial);
+  const [jornadaId, setJornadaId] = useState('');
+  const [confirmacion, setConfirmacion] = useState(null);
+
+  const jornadasDisponibles = datos.jornadas
+    .filter(jornadaPermiteInscripcion)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
+  const headerClass = `fw-bold py-3 ${modoOscuro ? 'bg-secondary text-light' : 'bg-white'}`;
+  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
+  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      if (['formateo', 'mantencionFisica', 'mantencionLogica'].includes(name)) {
-        setFormData(prev => ({ ...prev, servicios: { ...prev.servicios, [name]: checked } }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: checked }));
+
+    setFormData((prev) => {
+      if (Object.hasOwn(prev.servicios, name)) {
+        return { ...prev, servicios: { ...prev.servicios, [name]: checked } };
       }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+      return { ...prev, [name]: type === 'checkbox' ? checked : value };
+    });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Preinscripción guardada exitosamente. El cliente ha aceptado los términos legales.');
+
+    const jornada = jornadasDisponibles.find((j) => j.id === jornadaId);
+    if (!jornada) return alert('Selecciona una jornada disponible.');
+    if (!validarRut(formData.rut)) return alert('El RUT ingresado no es válido.');
+
+    const servicioIds = Object.entries(formData.servicios)
+      .filter(([, seleccionado]) => seleccionado)
+      .map(([id]) => id);
+
+    if (!servicioIds.length) return alert('Selecciona al menos un servicio.');
+    if (!formData.aceptaTerminos) return alert('Debes aceptar los términos.');
+
+    const rut = normalizarRut(formData.rut);
+    const existente = datos.propietarios.find((p) => normalizarRut(p.rut) === rut);
+
+    const propietarioId = existente?.id ?? `PROP-${crypto.randomUUID()}`;
+    const dispositivoId = `DISP-${crypto.randomUUID()}`;
+    const atencionId = `AT-${crypto.randomUUID()}`;
+    const fechaRegistro = new Date().toISOString();
+
+    const propietario = {
+      id: propietarioId, rut,
+      nombre: formData.nombre.trim(),
+      apellidoPaterno: formData.apellidoPaterno.trim(),
+      apellidoMaterno: formData.apellidoMaterno.trim(),
+      telefono: formData.telefono.trim(),
+      correo: formData.correo.trim(),
+      comuna: formData.comuna.trim(),
+      sector: formData.sector.trim(),
+    };
+
+    const dispositivo = {
+      id: dispositivoId, propietarioId, tipo: 'pendiente',
+      marca: formData.marcaEquipo.trim(),
+      modelo: formData.modeloEquipo.trim(),
+      numeroSerie: formData.numeroSerie.trim(),
+    };
+
+    const atencion = {
+      id: atencionId, dispositivoId, jornadaId: jornada.id, servicioIds,
+      diagnosticoPropietario: formData.diagnosticoPropietario.trim(),
+      fechaPreinscripcion: fechaRegistro,
+      fechaAceptacionTerminos: fechaRegistro,
+      tecnicoIds: [], estado: 'preinscrito',
+      observaciones: [], respuestasChecklist: [],
+    };
+
+    dispatch({
+      type: 'REGISTRAR_PREINSCRIPCION',
+      payload: { propietario, dispositivo, atencion },
+    });
+
+    setConfirmacion({
+      atencionId, nombre: `${propietario.nombre} ${propietario.apellidoPaterno}`,
+      equipo: `${dispositivo.marca} ${dispositivo.modelo}`,
+      jornada: `${jornada.periodo} — ${jornada.fecha}`,
+      fechaRegistro,
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      marcaEquipo: '', modeloEquipo: '', numeroSerie: '', diagnosticoPropietario: '',
+      servicios: { formateo: false, mantencionFisica: false, mantencionLogica: false },
+      aceptaTerminos: false,
+    }));
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const headerClass = `fw-bold py-3 ${modoOscuro ? 'bg-secondary text-light border-secondary' : 'bg-white'}`;
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
+  const agregarOtroEquipo = () => {
+    setConfirmacion(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const nuevaInscripcion = () => {
+    setFormData(formularioInicial);
+    setJornadaId('');
+    setConfirmacion(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // CONFIRMACIÓN: reemplaza el formulario después del registro.
+  if (confirmacion) {
+    return (
+      <Card className={cardClass}>
+        <Card.Body className="p-4 p-md-5 text-center" aria-live="polite">
+          <div className="fs-1 mb-3" aria-hidden="true">✓</div>
+          <h3 className="text-success fw-bold">¡Preinscripción registrada!</h3>
+          <p className={modoOscuro ? 'text-light' : 'text-muted'}>
+            Tu dispositivo quedó registrado para la jornada seleccionada.
+          </p>
+
+          <div className={`text-start p-4 rounded-3 my-4 ${modoOscuro ? 'bg-secondary' : 'bg-light'}`}>
+            <p><strong>Propietario:</strong> {confirmacion.nombre}</p>
+            <p><strong>Equipo:</strong> {confirmacion.equipo}</p>
+            <p><strong>Jornada:</strong> {confirmacion.jornada}</p>
+            <p><strong>Fecha de registro:</strong> {
+              new Date(confirmacion.fechaRegistro).toLocaleString('es-CL')
+            }</p>
+            <p className="mb-0"><strong>N.º de atención:</strong> {confirmacion.atencionId}</p>
+          </div>
+
+          <Alert variant="info" className="text-start">
+            Esta confirmación corresponde a la preinscripción. Debes presentar el
+            dispositivo en recepción durante la jornada para continuar la atención.
+          </Alert>
+
+          <div className="d-flex flex-wrap justify-content-center gap-3 mt-4">
+            <Button variant={modoOscuro ? 'light' : 'danger'}
+              onClick={agregarOtroEquipo} className="fw-bold">
+              Agregar otro dispositivo
+            </Button>
+            <Button variant="outline-secondary" onClick={nuevaInscripcion}>
+              Nueva inscripción
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
+    );
+  }
 
   return (
     <>
       <div className="mb-4">
-        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>Formulario de Preinscripción (Vista Cliente)</h3>
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>Ingrese sus datos personales y los de su equipo para agilizar la recepción.</p>
+        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>Preinscripción de Equipos</h3>
+        <p className={modoOscuro ? 'text-light' : 'text-muted'}>
+          Selecciona una jornada y registra los datos del propietario y su dispositivo.
+        </p>
       </div>
 
       <Form onSubmit={handleSubmit}>
         <Card className={cardClass}>
-          <Card.Header className={headerClass}>1. Datos Personales</Card.Header>
+          <Card.Header className={headerClass}>1. Jornada de Atención</Card.Header>
           <Card.Body className="p-4">
-            <Row className="g-3">
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">RUT *</Form.Label><Form.Control type="text" name="rut" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Nombre *</Form.Label><Form.Control type="text" name="nombre" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Apellido Paterno *</Form.Label><Form.Control type="text" name="apellidoPaterno" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Apellido Materno *</Form.Label><Form.Control type="text" name="apellidoMaterno" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Teléfono *</Form.Label><Form.Control type="tel" name="telefono" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Correo Electrónico *</Form.Label><Form.Control type="email" name="correo" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Comuna *</Form.Label><Form.Control type="text" name="comuna" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Sector *</Form.Label><Form.Control type="text" name="sector" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-            </Row>
+            <Form.Label className="fw-bold">Selecciona la jornada *</Form.Label>
+            <Form.Select required value={jornadaId} className={controlClass}
+              onChange={(e) => setJornadaId(e.target.value)}>
+              <option value="">Seleccione una jornada...</option>
+              {jornadasDisponibles.map((j) => (
+                <option key={j.id} value={j.id}>
+                  {j.periodo} — {j.fecha} ({etiquetasEstadoJornada[obtenerEstadoJornada(j)]})
+                </option>
+              ))}
+            </Form.Select>
+
+            {!jornadasDisponibles.length && (
+              <Alert variant="warning" className="mt-3 mb-0">
+                No hay jornadas disponibles para preinscripción.
+              </Alert>
+            )}
           </Card.Body>
         </Card>
 
         <Card className={cardClass}>
-          <Card.Header className={headerClass}>2. Datos del Equipo y Servicio</Card.Header>
+          <Card.Header className={headerClass}>2. Datos del Propietario</Card.Header>
           <Card.Body className="p-4">
-            <Row className="g-3">
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Marca del Equipo *</Form.Label><Form.Control type="text" name="marcaEquipo" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Modelo *</Form.Label><Form.Control type="text" name="modeloEquipo" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="fw-bold">Número de Serie (Opcional)</Form.Label>
-                  <Form.Control type="text" name="numeroSerie" onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''} />
-                  <Form.Text className={modoOscuro ? 'text-light fst-italic' : 'text-muted fst-italic'}>Nota: Si no lo conoce, déjelo en blanco.</Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={12}><Form.Group><Form.Label className="fw-bold">¿Qué problema presenta su equipo? *</Form.Label><Form.Control as="textarea" rows={3} name="diagnosticoPropietario" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              
-              <Col md={12}>
-                <Form.Label className="fw-bold d-block">Servicio Requerido *</Form.Label>
-                <div className="d-flex flex-wrap gap-4 mt-2">
-                  
-                  <Form.Check 
-                    type="checkbox" 
-                    name="formateo" 
-                    onChange={handleChange} 
-                    label={
-                      <span className="d-flex align-items-center">
-                        Formateo
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Reinstalación del sistema desde cero. Elimina virus graves. <strong>Borra todos los archivos</strong> (requiere respaldo previo).</Tooltip>}>
-                          <span className="ms-2 badge bg-secondary rounded-circle" style={{ cursor: 'help', fontSize: '0.65em' }}>?</span>
-                        </OverlayTrigger>
-                      </span>
-                    } 
-                  />
-                  
-                  <Form.Check 
-                    type="checkbox" 
-                    name="mantencionLogica" 
-                    onChange={handleChange} 
-                    label={
-                      <span className="d-flex align-items-center">
-                        Mantención Lógica
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Limpieza de software, eliminación de virus ligeros y optimización. <strong>Tus archivos no se borran.</strong></Tooltip>}>
-                          <span className="ms-2 badge bg-secondary rounded-circle" style={{ cursor: 'help', fontSize: '0.65em' }}>?</span>
-                        </OverlayTrigger>
-                      </span>
-                    } 
-                  />
-                  
-                  <Form.Check 
-                    type="checkbox" 
-                    name="mantencionFisica" 
-                    onChange={handleChange} 
-                    label={
-                      <span className="d-flex align-items-center">
-                        Mantención Física
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Limpieza interna de polvo y cambio de pasta térmica. Ideal si tu equipo <strong>se calienta o hace mucho ruido</strong>.</Tooltip>}>
-                          <span className="ms-2 badge bg-secondary rounded-circle" style={{ cursor: 'help', fontSize: '0.65em' }}>?</span>
-                        </OverlayTrigger>
-                      </span>
-                    } 
-                  />
-
-                </div>
-              </Col>
-
-            </Row>
+            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
           </Card.Body>
         </Card>
 
-        {/* 3. TÉRMINOS LEGALES */}
-        <Card className={cardClass} border="danger">
-          <Card.Header className={`fw-bold py-3 text-white`} style={{ backgroundColor: '#cc0000' }}>
-            3. Términos y Condiciones Legales
-          </Card.Header>
+        <Card className={cardClass}>
+          <Card.Header className={headerClass}>3. Información del Dispositivo</Card.Header>
           <Card.Body className="p-4">
-            <Alert variant={modoOscuro ? "dark" : "warning"} className={`mb-0 border-0 shadow-sm ${modoOscuro ? 'border-secondary text-light' : ''}`}>
-              <Form.Check 
-                type="checkbox" 
-                id="aceptaTerminos" 
-                name="aceptaTerminos" 
-                required 
-                onChange={handleChange}
-                label={
-                  <span className="ms-1">
-                    Tomo conocimiento y acepto las condiciones del servicio. Autorizo el tratamiento de mis datos personales en conformidad a la <strong>Ley N° 21.719</strong> y eximo expresamente a <strong>Clínica del PC</strong> y a <strong>INACAP</strong> de cualquier responsabilidad frente a la eventual pérdida de información, programas o datos no respaldados por mí de forma previa a la entrega del equipo.
-                  </span>
-                }
-              />
-            </Alert>
+            <DatosEquipo formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
           </Card.Body>
         </Card>
 
-        <div className="d-flex justify-content-end mb-5">
-          <Button type="submit" size="lg" variant={modoOscuro ? "light" : "danger"} className="fw-bold px-5">
-            Registrar Equipo
+        <Card className={cardClass}>
+          <Card.Header className={headerClass}>4. Términos y Condiciones</Card.Header>
+          <Card.Body className="p-4">
+            <TerminosLegales formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
+          </Card.Body>
+        </Card>
+
+        <div className="d-grid mb-5">
+          <Button type="submit" variant={modoOscuro ? 'light' : 'danger'}
+            size="lg" className="fw-bold py-3" disabled={!jornadasDisponibles.length}>
+            Registrar Preinscripción
           </Button>
         </div>
       </Form>

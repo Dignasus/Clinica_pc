@@ -1,139 +1,194 @@
-import { useState, useEffect } from 'react';
-import { Card, Form, Row, Col, Button, Table, Badge } from 'react-bootstrap';
 
-// Recibimos periodoGlobal como prop desde el panel principal
-export default function HistorialConsultas({ modoOscuro, periodoGlobal }) {
-  const [filtros, setFiltros] = useState({ busquedaGeneral: '', fechaInicio: '', fechaFin: '' });
+import { useState } from 'react';
+import { Alert, Badge, Button, Card, Col, Form, Row, Table } from 'react-bootstrap';
+import { useClinica } from '../context/clinicaContextBase.js';
+import DetalleAtencion from './historial/DetalleAtencion.jsx';
 
-  // Agregamos la propiedad "periodo" a los datos simulados
-  const historialMock = [
-    { id: 1, fecha: '2025-10-15', periodo: 'Otoño 2025', rut: '11222333-4', propietario: 'Luis Pérez', equipo: 'HP Pavilion', servicio: 'Formateo', tecnico: 'Matías Carrasco', estado: 'Entregado' },
-    { id: 2, fecha: '2025-10-16', periodo: 'Otoño 2025', rut: '44555666-7', propietario: 'Ana Soto', equipo: 'Dell Inspiron', servicio: 'Mantención Física', tecnico: 'Cristian', estado: 'Entregado' },
-    { id: 3, fecha: '2026-04-10', periodo: 'Otoño 2026', rut: '12345678-9', propietario: 'Camila Rojas', equipo: 'Asus ZenBook', servicio: 'Mantención Lógica', tecnico: 'Matías Carrasco', estado: 'Entregado' }
-  ];
+const estados = {
+  preinscrito: { nombre: 'Preinscrito', color: 'secondary' },
+  asignado: { nombre: 'Asignado', color: 'warning' },
+  en_proceso: { nombre: 'En proceso', color: 'info' },
+  listo_entrega: { nombre: 'Listo para entrega', color: 'primary' },
+  contactado: { nombre: 'Contactado', color: 'primary' },
+  entregado: { nombre: 'Entregado', color: 'success' },
+  no_presentado: { nombre: 'No presentado', color: 'danger' },
+  cancelado: { nombre: 'Cancelado', color: 'secondary' },
+};
 
-  const [resultados, setResultados] = useState([]);
-
-  // Centralizamos la lógica de filtrado
-  const aplicarFiltros = () => {
-    const termino = filtros.busquedaGeneral.toLowerCase();
-    
-    const datosFiltrados = historialMock.filter(registro => {
-      // 1. Filtrar por el selector del menú principal de arriba
-      const coincidePeriodo = periodoGlobal === 'Todos' || registro.periodo === periodoGlobal;
-
-      // 2. Filtrar por texto (AHORA INCLUYE LA FECHA)
-      const coincideTexto = 
-        registro.rut.toLowerCase().includes(termino) || 
-        registro.propietario.toLowerCase().includes(termino) || 
-        registro.tecnico.toLowerCase().includes(termino) || 
-        registro.equipo.toLowerCase().includes(termino) || 
-        registro.servicio.toLowerCase().includes(termino) ||
-        registro.fecha.includes(termino); // Magia para que busque años
-
-      // 3. Filtrar por rango de fechas
-      let coincideFecha = true;
-      const fechaRegistro = new Date(registro.fecha);
-      if (filtros.fechaInicio) coincideFecha = coincideFecha && fechaRegistro >= new Date(filtros.fechaInicio);
-      if (filtros.fechaFin) coincideFecha = coincideFecha && fechaRegistro <= new Date(filtros.fechaFin);
-
-      return coincidePeriodo && coincideTexto && coincideFecha;
-    });
-    
-    setResultados(datosFiltrados);
-  };
-
-  // Se ejecuta automáticamente si cambias el "Período Activo" en el menú de arriba
-  useEffect(() => {
-    // Solo filtra si periodoGlobal ya cargó (por si acaso)
-    if (periodoGlobal) aplicarFiltros();
-  }, [periodoGlobal]); // eslint-disable-line
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFiltros(prev => ({ ...prev, [name]: value }));
-  };
-
-  // Se ejecuta si el usuario aprieta el botón de buscar
-  const handleBuscar = (e) => {
-    e.preventDefault();
-    aplicarFiltros();
-  };
+export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos' }) {
+  const { datos } = useClinica();
+  const [busqueda, setBusqueda] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState('Todos');
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+  const [seleccionadoId, setSeleccionadoId] = useState(null);
 
   const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
+  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
   const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
+
+  // Relacionar cada atención con su dispositivo, propietario y jornada.
+  const registros = datos.atenciones.map((atencion) => {
+    const dispositivo = datos.dispositivos.find((d) => d.id === atencion.dispositivoId);
+    const propietario = datos.propietarios.find((p) => p.id === dispositivo?.propietarioId);
+    const jornada = datos.jornadas.find((j) => j.id === atencion.jornadaId);
+
+    return { ...atencion, dispositivo, propietario, jornada };
+  });
+
+  // Los filtros se calculan directamente desde el estado compartido.
+  const filtrados = registros.filter((registro) => {
+    const { propietario, dispositivo, jornada } = registro;
+
+    const texto = [
+      registro.id, propietario?.rut, propietario?.nombre,
+      propietario?.apellidoPaterno, propietario?.apellidoMaterno,
+      dispositivo?.marca, dispositivo?.modelo, dispositivo?.numeroSerie,
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    const coincideBusqueda = texto.includes(busqueda.trim().toLowerCase());
+    const coincidePeriodo = periodoGlobal === 'Todos' || jornada?.periodo === periodoGlobal;
+    const coincideEstado = estadoFiltro === 'Todos' || registro.estado === estadoFiltro;
+    const coincideInicio = !fechaInicio || (jornada?.fecha && jornada.fecha >= fechaInicio);
+    const coincideFin = !fechaFin || (jornada?.fecha && jornada.fecha <= fechaFin);
+
+    return coincideBusqueda && coincidePeriodo && coincideEstado &&
+      coincideInicio && coincideFin;
+  }).sort((a, b) =>
+    (b.fechaPreinscripcion || '').localeCompare(a.fechaPreinscripcion || '')
+  );
+
+  const seleccionado = filtrados.find((r) => r.id === seleccionadoId);
+  const entregados = filtrados.filter((r) => r.estado === 'entregado').length;
+  const activos = filtrados.filter((r) =>
+    ['preinscrito', 'asignado', 'en_proceso', 'listo_entrega', 'contactado'].includes(r.estado)
+  ).length;
 
   return (
     <>
       <div className="mb-4">
-        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>Historial y Consultas</h3>
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>Busque atenciones por nombre, RUT, equipo o filtre por rango de fechas.</p>
+        <h3 className="fw-bold" style={{ color: titleColor }}>Historial y Consultas</h3>
+        <p className={modoOscuro ? 'text-light' : 'text-muted'}>
+          Seguimiento de atenciones y consulta de registros de Clínica del PC.
+        </p>
       </div>
 
-      <Card className={cardClass}>
-        <Card.Body className="p-4">
-          <Form onSubmit={handleBuscar}>
-            <Row className="g-3 align-items-end">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label className="fw-bold">Búsqueda General</Form.Label>
-                  <Form.Control type="text" name="busquedaGeneral" value={filtros.busquedaGeneral} onChange={handleChange} placeholder="RUT, nombre, técnico, año..." className={modoOscuro ? 'bg-dark text-light' : ''} />
-                </Form.Group>
-              </Col>
-              <Col md={2}>
-                <Form.Group>
-                  <Form.Label className="fw-bold">Fecha Inicio</Form.Label>
-                  <Form.Control type="date" name="fechaInicio" value={filtros.fechaInicio} onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''} />
-                </Form.Group>
-              </Col>
-              <Col md={2}>
-                <Form.Group>
-                  <Form.Label className="fw-bold">Fecha Fin</Form.Label>
-                  <Form.Control type="date" name="fechaFin" value={filtros.fechaFin} onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''} />
-                </Form.Group>
-              </Col>
-              <Col md={2} className="d-grid">
-                <Button variant={modoOscuro ? "light" : "danger"} type="submit" className="fw-bold">Buscar</Button>
-              </Col>
-            </Row>
-          </Form>
-        </Card.Body>
-      </Card>
+      {seleccionado ? (
+        <DetalleAtencion registro={seleccionado} datos={datos}
+          modoOscuro={modoOscuro} onVolver={() => setSeleccionadoId(null)} />
+      ) : (
+        <>
+          <Card className={cardClass}>
+            <Card.Header className="fw-bold py-3">Buscar y filtrar atenciones</Card.Header>
+            <Card.Body className="p-4">
+              <Row className="g-3">
+                <Col lg={6}>
+                  <Form.Label className="fw-bold">Buscar registro</Form.Label>
+                  <Form.Control value={busqueda} className={controlClass}
+                    placeholder="RUT, propietario, equipo, serie o atención"
+                    onChange={(e) => setBusqueda(e.target.value)} />
+                </Col>
+                <Col lg={3}>
+                  <Form.Label className="fw-bold">Estado</Form.Label>
+                  <Form.Select value={estadoFiltro} className={controlClass}
+                    onChange={(e) => setEstadoFiltro(e.target.value)}>
+                    <option value="Todos">Todos los estados</option>
+                    {Object.entries(estados).map(([clave, estado]) => (
+                      <option key={clave} value={clave}>{estado.nombre}</option>
+                    ))}
+                  </Form.Select>
+                </Col>
+                <Col lg={3}>
+                  <Form.Label className="fw-bold">Período</Form.Label>
+                  <Form.Control value={periodoGlobal === 'Todos'
+                    ? 'Todos los períodos' : periodoGlobal} readOnly className={controlClass} />
+                </Col>
+                <Col md={4}>
+                  <Form.Label className="fw-bold">Jornada desde</Form.Label>
+                  <Form.Control type="date" value={fechaInicio} max={fechaFin || undefined}
+                    className={controlClass} onChange={(e) => setFechaInicio(e.target.value)} />
+                </Col>
+                <Col md={4}>
+                  <Form.Label className="fw-bold">Jornada hasta</Form.Label>
+                  <Form.Control type="date" value={fechaFin} min={fechaInicio || undefined}
+                    className={controlClass} onChange={(e) => setFechaFin(e.target.value)} />
+                </Col>
+                <Col md={4} className="d-flex align-items-end">
+                  <Button variant="outline-secondary" className="w-100"
+                    onClick={() => { setBusqueda(''); setEstadoFiltro('Todos');
+                      setFechaInicio(''); setFechaFin(''); }}>
+                    Limpiar filtros
+                  </Button>
+                </Col>
+              </Row>
+            </Card.Body>
+          </Card>
 
-      <Card className={`shadow-sm border-0 ${modoOscuro ? 'bg-dark text-light' : ''}`}>
-        <Card.Body className="p-0">
-          <Table responsive hover variant={modoOscuro ? 'dark' : 'light'} className="mb-0 align-middle">
-            <thead>
-              <tr>
-                <th className="py-3 px-4 border-bottom-0">Fecha</th>
-                <th className="py-3 border-bottom-0">RUT</th>
-                <th className="py-3 border-bottom-0">Propietario</th>
-                <th className="py-3 border-bottom-0">Equipo</th>
-                <th className="py-3 border-bottom-0">Servicio</th>
-                <th className="py-3 border-bottom-0">Técnico</th>
-                <th className="py-3 px-4 border-bottom-0">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resultados.length > 0 ? (
-                resultados.map(registro => (
-                  <tr key={registro.id}>
-                    <td className="px-4">{registro.fecha}</td>
-                    <td>{registro.rut}</td>
-                    <td>{registro.propietario}</td>
-                    <td>{registro.equipo}</td>
-                    <td>{registro.servicio}</td>
-                    <td>{registro.tecnico}</td>
-                    <td className="px-4"><Badge bg="success" className="px-3 py-2 rounded-pill">{registro.estado}</Badge></td>
+          <div className="d-flex flex-wrap gap-3 mb-4">
+            <Badge bg="secondary" className="px-3 py-2">Resultados: {filtrados.length}</Badge>
+            <Badge bg="success" className="px-3 py-2">Entregados: {entregados}</Badge>
+            <Badge bg="primary" className="px-3 py-2">Activos: {activos}</Badge>
+          </div>
+
+          <Card className={cardClass}>
+            <Card.Header className="fw-bold py-3">Registros de atención</Card.Header>
+            <Card.Body className="p-0">
+              <Table responsive hover variant={modoOscuro ? 'dark' : 'light'}
+                className="align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-3">Atención</th>
+                    <th>Propietario</th><th>Dispositivo</th>
+                    <th>Jornada</th><th>Estado</th>
+                    <th className="text-end px-3">Acción</th>
                   </tr>
-                ))
-              ) : (
-                <tr><td colSpan="7" className="text-center py-4 text-muted">No se encontraron registros en este período.</td></tr>
-              )}
-            </tbody>
-          </Table>
-        </Card.Body>
-      </Card>
+                </thead>
+                <tbody>
+                  {filtrados.map((r) => {
+                    const estado = estados[r.estado] || {
+                      nombre: r.estado, color: 'secondary',
+                    };
+
+                    return (
+                      <tr key={r.id}>
+                        <td className="px-3"><small>{r.id.slice(0, 12)}...</small></td>
+                        <td>{r.propietario
+                          ? `${r.propietario.nombre} ${r.propietario.apellidoPaterno}`
+                          : 'Sin propietario'}</td>
+                        <td>{r.dispositivo
+                          ? `${r.dispositivo.marca} ${r.dispositivo.modelo}`
+                          : 'Sin dispositivo'}</td>
+                        <td>{r.jornada?.fecha || 'Sin jornada'}</td>
+                        <td>
+                          <Badge bg={estado.color}
+                            text={['warning', 'info'].includes(estado.color) ? 'dark' : undefined}>
+                            {estado.nombre}
+                          </Badge>
+                        </td>
+                        <td className="text-end px-3">
+                          <Button size="sm" variant="outline-danger"
+                            onClick={() => setSeleccionadoId(r.id)}>
+                            Ver ficha
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filtrados.length === 0 && (
+                    <tr><td colSpan={6} className="text-center py-4">
+                      No se encontraron atenciones con los filtros seleccionados.
+                    </td></tr>
+                  )}
+                </tbody>
+              </Table>
+            </Card.Body>
+          </Card>
+
+          {registros.length === 0 && (
+            <Alert variant="info">Todavía no existen atenciones registradas.</Alert>
+          )}
+        </>
+      )}
     </>
   );
 }

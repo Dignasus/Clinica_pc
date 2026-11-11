@@ -1,118 +1,235 @@
+
 import { useState } from 'react';
-import { Card, Form, Button, Row, Col, Table, Alert } from 'react-bootstrap';
+import {
+  Card, Form, Button, Row, Col, Table, Alert,
+} from 'react-bootstrap';
+
+import { useClinica } from '../context/clinicaContextBase.js';
 
 export default function RecepcionEquipos({ modoOscuro }) {
-  const [equiposPendientes, setEquiposPendientes] = useState([
-    { id: 101, rut: '12345678-9', nombre: 'Camila Rojas', equipo: 'Lenovo IdeaPad 5', falla: 'Se apaga repentinamente', fecha: 'Hoy 09:30' },
-    { id: 102, rut: '9876543-2', nombre: 'Pedro Pascal', equipo: 'MacBook Air M1', falla: 'No carga batería', fecha: 'Hoy 11:15' },
-    { id: 103, rut: '19283746-5', nombre: 'Valentina Soto', equipo: 'HP Pavilion', falla: 'Muy lento, requiere formateo', fecha: 'Ayer 16:45' }
-  ]);
+  const { datos, dispatch } = useClinica();
 
-  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
-  const [tecnicoAsignado, setTecnicoAsignado] = useState('');
   const [rutBusqueda, setRutBusqueda] = useState('');
+  const [atencionSeleccionadaId, setAtencionSeleccionadaId] = useState(null);
+  const [tecnicoAsignado, setTecnicoAsignado] = useState('');
+  const [mensaje, setMensaje] = useState('');
 
-  // 1. Lógica de Filtro en Vivo: Comprueba si el texto ingresado está en el RUT o el Nombre
-  const equiposFiltrados = equiposPendientes.filter(eq => 
-    eq.rut.includes(rutBusqueda) || 
-    eq.nombre.toLowerCase().includes(rutBusqueda.toLowerCase())
+  // Unir atención, dispositivo, propietario y jornada.
+  const equiposPendientes = datos.atenciones
+    .filter((atencion) => atencion.estado === 'preinscrito')
+    .map((atencion) => {
+      const dispositivo = datos.dispositivos.find(
+        (item) => item.id === atencion.dispositivoId
+      );
+
+      const propietario = datos.propietarios.find(
+        (item) => item.id === dispositivo?.propietarioId
+      );
+
+      const jornada = datos.jornadas.find(
+        (item) => item.id === atencion.jornadaId
+      );
+
+      if (!dispositivo || !propietario) return null;
+
+      return {
+        id: atencion.id,
+        rut: propietario.rut,
+        nombre: [
+          propietario.nombre,
+          propietario.apellidoPaterno,
+          propietario.apellidoMaterno,
+        ].filter(Boolean).join(' '),
+        equipo: `${dispositivo.marca} ${dispositivo.modelo}`,
+        falla: atencion.diagnosticoPropietario,
+        fecha: atencion.fechaPreinscripcion
+          ? new Date(atencion.fechaPreinscripcion).toLocaleString('es-CL')
+          : 'Sin fecha',
+        jornada: jornada?.periodo ?? 'Sin jornada',
+        servicios: atencion.servicioIds
+          .map((id) => datos.servicios.find((servicio) => servicio.id === id)?.nombre)
+          .filter(Boolean)
+          .join(', '),
+      };
+    })
+    .filter(Boolean);
+
+  const normalizarBusqueda = (valor) =>
+    valor.toLowerCase().replace(/[.\s-]/g, '');
+
+  const termino = normalizarBusqueda(rutBusqueda);
+
+  const equiposFiltrados = equiposPendientes.filter((equipo) =>
+    normalizarBusqueda(equipo.rut).includes(termino) ||
+    equipo.nombre.toLowerCase().includes(rutBusqueda.toLowerCase().trim())
   );
+
+  const equipoSeleccionado = equiposPendientes.find(
+    (equipo) => equipo.id === atencionSeleccionadaId
+  );
+
+  const tecnicos = datos.usuarios.filter(
+    (usuario) => usuario.rol === 'tecnico'
+  );
+
+  const seleccionarEquipo = (equipo) => {
+    setAtencionSeleccionadaId(equipo.id);
+    setRutBusqueda(equipo.rut);
+    setTecnicoAsignado('');
+    setMensaje('');
+  };
 
   const buscarCliente = (e) => {
     e.preventDefault();
-    
-    // 2. Comportamiento inteligente del botón buscar
-    if (equiposFiltrados.length === 1) {
-      // Si solo queda uno en la tabla, lo selecciona automáticamente
-      seleccionarDesdeTabla(equiposFiltrados[0]);
-    } else if (equiposFiltrados.length > 1) {
-      // Si hay varios, avisa que debe elegir
-      alert('Se encontraron varias coincidencias. Por favor, seleccione manualmente desde la tabla.');
-    } else {
-      // Si no hay ninguno
-      alert('No se encontraron preinscripciones con ese dato. El cliente debe realizar la Fase 1 primero.');
-      setClienteSeleccionado(null);
-    }
-  };
 
-  const seleccionarDesdeTabla = (equipo) => {
-    setClienteSeleccionado(equipo);
-    setRutBusqueda(equipo.rut); // Autocompleta el RUT en la barra
+    if (equiposFiltrados.length === 1) {
+      seleccionarEquipo(equiposFiltrados[0]);
+    } else if (equiposFiltrados.length > 1) {
+      setAtencionSeleccionadaId(null);
+      setMensaje(
+        'Se encontraron varios equipos. Selecciona el dispositivo que se está recibiendo.'
+      );
+    } else {
+      setAtencionSeleccionadaId(null);
+      setMensaje('No se encontraron preinscripciones con esa búsqueda.');
+    }
   };
 
   const handleAsignar = (e) => {
     e.preventDefault();
-    alert('Equipo recepcionado exitosamente y asignado al técnico.');
-    
-    // Lo quitamos de la lista para simular que avanzó a taller
-    setEquiposPendientes(prev => prev.filter(eq => eq.id !== clienteSeleccionado.id));
-    setClienteSeleccionado(null);
-    setRutBusqueda('');
+
+    if (!equipoSeleccionado || !tecnicoAsignado) return;
+
+    const tecnicoValido = tecnicos.some(
+      (tecnico) => tecnico.id === tecnicoAsignado
+    );
+
+    if (!tecnicoValido) {
+      setMensaje('Selecciona un técnico válido.');
+      return;
+    }
+
+    dispatch({
+      type: 'ASIGNAR_TECNICO',
+      payload: {
+        atencionId: equipoSeleccionado.id,
+        tecnicoId: tecnicoAsignado,
+        fechaRecepcion: new Date().toISOString(),
+      },
+    });
+
+    setMensaje(
+      'Equipo recepcionado y asignado en el prototipo.'
+    );
+
+    setAtencionSeleccionadaId(null);
     setTecnicoAsignado('');
+    setRutBusqueda('');
   };
 
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const headerClass = `fw-bold py-3 ${modoOscuro ? 'bg-secondary text-light' : 'bg-white'}`;
-  const highlightCardClass = `shadow-sm border-0 border-top border-danger border-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const infoBoxClass = `p-4 rounded-3 mb-4 border ${modoOscuro ? 'bg-secondary text-light border-secondary' : 'bg-light'}`;
+  const cardClass = `shadow-sm border-0 mb-4 ${
+    modoOscuro ? 'bg-dark text-light' : ''
+  }`;
+
+  const headerClass = `fw-bold py-3 ${
+    modoOscuro ? 'bg-secondary text-light' : 'bg-white'
+  }`;
+
   const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
 
   return (
     <>
       <div className="mb-4">
-        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>Recepción Física de Equipos</h3>
+        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>
+          Recepción Física de Equipos
+        </h3>
         <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-          Confirme la llegada física del equipo preinscrito y asígnelo a un técnico disponible.
+          Busque la preinscripción, seleccione el dispositivo y asigne un técnico.
         </p>
       </div>
 
+      {mensaje && (
+        <Alert
+          variant="info"
+          dismissible
+          onClose={() => setMensaje('')}
+        >
+          {mensaje}
+        </Alert>
+      )}
+
       <Row className="g-4">
-        {/* Columna Izquierda: Búsqueda y Tabla */}
         <Col lg={7}>
           <Card className={cardClass}>
-            <Card.Header className={headerClass}>1. Buscar Preinscripción</Card.Header>
+            <Card.Header className={headerClass}>
+              1. Buscar Preinscripción
+            </Card.Header>
+
             <Card.Body className="p-4">
               <Form onSubmit={buscarCliente} className="mb-4">
                 <Form.Group className="d-flex gap-2">
-                  <Form.Control 
-                    type="text" 
-                    placeholder="Ingrese RUT o Nombre..." 
-                    value={rutBusqueda} 
-                    onChange={(e) => setRutBusqueda(e.target.value)} 
-                    className={modoOscuro ? 'bg-dark text-light' : ''} 
+                  <Form.Control
+                    type="text"
+                    placeholder="Ingrese RUT o nombre..."
+                    value={rutBusqueda}
+                    onChange={(e) => {
+                      setRutBusqueda(e.target.value);
+                      setAtencionSeleccionadaId(null);
+                    }}
+                    className={modoOscuro ? 'bg-dark text-light' : ''}
                   />
-                  <Button variant={modoOscuro ? "light" : "danger"} type="submit" className="fw-bold px-4">Buscar</Button>
+
+                  <Button
+                    variant={modoOscuro ? 'light' : 'danger'}
+                    type="submit"
+                  >
+                    Buscar
+                  </Button>
                 </Form.Group>
               </Form>
 
-              <h6 className="fw-bold mb-3">Equipos esperando llegada (Fase 1 completada):</h6>
-              <Table responsive hover variant={modoOscuro ? 'dark' : 'light'} className="align-middle mb-0">
-                <thead className="bg-light">
+              <h6 className="fw-bold mb-3">
+                Equipos pendientes de recepción
+              </h6>
+
+              <Table
+                responsive
+                hover
+                variant={modoOscuro ? 'dark' : 'light'}
+                className="align-middle"
+              >
+                <thead>
                   <tr>
                     <th>RUT</th>
-                    <th>Cliente</th>
+                    <th>Propietario</th>
                     <th>Equipo</th>
-                    <th className="text-end">Acción</th>
+                    <th>Acción</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {/* 3. Ahora renderizamos equiposFiltrados en lugar de la lista completa */}
-                  {equiposFiltrados.length > 0 ? (
-                    equiposFiltrados.map(eq => (
-                      <tr key={eq.id}>
-                        <td>{eq.rut}</td>
-                        <td>{eq.nombre}</td>
-                        <td>{eq.equipo}</td>
-                        <td className="text-end">
-                          <Button variant="outline-danger" size="sm" onClick={() => seleccionarDesdeTabla(eq)}>
-                            Seleccionar
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
+                  {equiposFiltrados.map((equipo) => (
+                    <tr key={equipo.id}>
+                      <td>{equipo.rut}</td>
+                      <td>{equipo.nombre}</td>
+                      <td>{equipo.equipo}</td>
+                      <td>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => seleccionarEquipo(equipo)}
+                        >
+                          Seleccionar
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {equiposFiltrados.length === 0 && (
                     <tr>
-                      <td colSpan="4" className="text-center py-3 text-muted">No hay preinscripciones que coincidan.</td>
+                      <td colSpan={4} className="text-center py-4">
+                        No hay equipos que coincidan.
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -121,53 +238,69 @@ export default function RecepcionEquipos({ modoOscuro }) {
           </Card>
         </Col>
 
-        {/* Columna Derecha: Asignación */}
         <Col lg={5}>
-          {clienteSeleccionado ? (
-            <Card className={highlightCardClass}>
-              <Card.Header className={headerClass}>2. Asignación Técnica</Card.Header>
+          {equipoSeleccionado ? (
+            <Card className={cardClass}>
+              <Card.Header className={headerClass}>
+                2. Asignación Técnica
+              </Card.Header>
+
               <Card.Body className="p-4">
-                <h4 className="mb-3 text-danger fw-bold">{clienteSeleccionado.nombre}</h4>
-                
-                <div className={infoBoxClass}>
-                  <p className="mb-2"><strong>RUT:</strong> {clienteSeleccionado.rut}</p>
-                  <p className="mb-2"><strong>Equipo:</strong> {clienteSeleccionado.equipo}</p>
-                  <p className="mb-2 text-danger"><strong>Falla:</strong> {clienteSeleccionado.falla}</p>
-                  <p className="mb-0"><strong>Preinscrito:</strong> {clienteSeleccionado.fecha}</p>
+                <h4 className="text-danger fw-bold">
+                  {equipoSeleccionado.nombre}
+                </h4>
+
+                <div className="bg-body-tertiary text-body p-3 rounded mb-4">
+                  <p><strong>RUT:</strong> {equipoSeleccionado.rut}</p>
+                  <p><strong>Equipo:</strong> {equipoSeleccionado.equipo}</p>
+                  <p><strong>Falla:</strong> {equipoSeleccionado.falla}</p>
+                  <p><strong>Servicios:</strong> {equipoSeleccionado.servicios}</p>
+                  <p><strong>Jornada:</strong> {equipoSeleccionado.jornada}</p>
+                  <p className="mb-0">
+                    <strong>Preinscrito:</strong> {equipoSeleccionado.fecha}
+                  </p>
                 </div>
 
                 <Form onSubmit={handleAsignar}>
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-bold">Seleccionar Técnico Asignado</Form.Label>
-                    <Form.Select 
-                      required 
+                    <Form.Label className="fw-bold">
+                      Técnico asignado
+                    </Form.Label>
+
+                    <Form.Select
+                      required
                       value={tecnicoAsignado}
                       onChange={(e) => setTecnicoAsignado(e.target.value)}
-                      className={modoOscuro ? 'bg-dark text-light' : ''}
                     >
                       <option value="">Seleccione técnico...</option>
-                      <option value="matias">Matías Carrasco (Disponible)</option>
-                      <option value="camila">Camila Rojas (Disponible)</option>
-                      <option value="cristian" disabled>Cristian (Ocupado)</option>
+                      {tecnicos.map((tecnico) => (
+                        <option key={tecnico.id} value={tecnico.id}>
+                          {tecnico.nombre}
+                        </option>
+                      ))}
                     </Form.Select>
                   </Form.Group>
 
-                  <Alert variant="warning" className="py-2 border-0 shadow-sm">
-                    <small>Asegúrese de recibir el equipo físicamente antes de confirmar.</small>
+                  <Alert variant="warning">
+                    Confirme que está recibiendo el dispositivo correcto.
+                    La inspección física detallada corresponde al técnico.
                   </Alert>
 
-                  <div className="d-grid mt-4">
-                    <Button variant={modoOscuro ? "light" : "danger"} type="submit" size="lg" className="fw-bold">
-                      Confirmar y Asignar
-                    </Button>
-                  </div>
+                  <Button
+                    type="submit"
+                    variant={modoOscuro ? 'light' : 'danger'}
+                    size="lg"
+                    className="w-100 fw-bold"
+                  >
+                    Confirmar y Asignar
+                  </Button>
                 </Form>
               </Card.Body>
             </Card>
           ) : (
-            <Card className={`${cardClass} h-100 d-flex align-items-center justify-content-center border-dashed`} style={{ minHeight: '300px' }}>
-              <Card.Body className="text-center text-muted p-5 d-flex flex-column justify-content-center">
-                <p className="mb-0">Seleccione un equipo de la lista o busque un RUT para asignar un técnico.</p>
+            <Card className={cardClass}>
+              <Card.Body className="text-center text-muted p-5">
+                Seleccione un dispositivo para continuar con la asignación.
               </Card.Body>
             </Card>
           )}
