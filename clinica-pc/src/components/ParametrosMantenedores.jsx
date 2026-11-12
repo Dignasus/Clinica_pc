@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, Form, Row, Col, Button, Table, Badge, Alert } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
+import './mantenedores/MantenedoresVisual.css';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
 
 const estadosFinales = ['entregado', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
@@ -38,10 +39,6 @@ function leerCSV(texto) {
 export default function ParametrosMantenedores({ modoOscuro = false }) {
   const { datos, dispatch } = useClinica();
   const [aviso, setAviso] = useState(null);
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const headerClass = `fw-bold py-3 ${modoOscuro ? 'bg-secondary text-light' : 'bg-white'}`;
-  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
-  const botonVariante = modoOscuro ? 'light' : 'danger';
   const jornadas = [...datos.jornadas].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const colores = { programada: 'primary', activa: 'success', pendiente_cierre: 'warning', finalizada: 'secondary' };
 
@@ -149,119 +146,297 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
   };
 
   return (
-    <>
-      <h3 className="fw-bold text-danger mb-1">Parámetros y Mantenedores</h3>
-      <p className={modoOscuro ? 'text-light mb-4' : 'text-muted mb-4'}>Administración de jornadas, personal y checklists.</p>
-      {aviso && <Alert variant={aviso.tipo} dismissible onClose={() => setAviso(null)}>{aviso.texto}</Alert>}
+    <section className={`mantenedores-pro ${modoOscuro ? 'tema-oscuro' : 'tema-claro'}`}>
+      <header className="mp-page-header">
+        <div>
+          <p className="mp-eyebrow">CLÍNICA DEL PC / ADMINISTRACIÓN</p>
+          <h1 className="mp-page-title">Parámetros y mantenedores</h1>
+          <p className="mp-description">Organiza jornadas, personal y plantillas de trabajo técnico.</p>
+        </div>
+        <div className="mp-summary" aria-label="Resumen de configuración">
+          <div className="mp-summary-item">
+            <strong>{jornadas.length}</strong>
+            <span>Jornadas</span>
+          </div>
+          <div className="mp-summary-item">
+            <strong>{datos.usuarios.length}</strong>
+            <span>Integrantes</span>
+          </div>
+          <div className="mp-summary-item">
+            <strong>{datos.plantillasChecklist.length}</strong>
+            <span>Plantillas</span>
+          </div>
+        </div>
+      </header>
 
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>1. Administración de jornadas</Card.Header>
-        <Card.Body className="p-4">
-          <Form onSubmit={handleCrearJornada}>
-            <Row className="g-3 align-items-end">
-              <Col md={5}><Form.Label>Período académico *</Form.Label><Form.Control name="periodo" placeholder="Ej: Primavera 2026" required className={controlClass}/></Col>
-              <Col md={5}><Form.Label>Fecha de ejecución *</Form.Label><Form.Control type="date" name="fecha" min={fechaLocal()} required className={controlClass}/></Col>
-              <Col md={2} className="d-grid"><Button type="submit" variant={botonVariante}>Registrar</Button></Col>
-            </Row>
-          </Form>
-          <h6 className="fw-bold mt-4">Jornadas registradas</h6>
-          <Table responsive hover variant={modoOscuro ? 'dark' : 'light'} className="align-middle">
-            <thead><tr><th>Período</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr></thead>
-            <tbody>{jornadas.map((j) => {
-              const estado = obtenerEstadoJornada(j);
-              const iniciar = estado === 'programada' && j.fecha === fechaLocal();
-              const cerrar = ['activa', 'pendiente_cierre'].includes(estado);
-              return <tr key={j.id}><td>{j.periodo}</td><td>{j.fecha}</td>
-                <td><Badge bg={colores[estado] || 'secondary'} text={estado === 'pendiente_cierre' ? 'dark' : undefined}>{etiquetasEstadoJornada[estado] || estado}</Badge></td>
-                <td>{iniciar && <Button size="sm" variant="outline-success" onClick={() => iniciarJornada(j)}>Iniciar</Button>}
-                  {cerrar && <Button size="sm" variant="outline-danger" onClick={() => cerrarJornada(j)}>Cerrar</Button>}
-                  {!iniciar && !cerrar && '—'}</td></tr>;
-            })}</tbody>
-          </Table>
-        </Card.Body>
-      </Card>
+      {aviso && (
+        <Alert variant={aviso.tipo} className="mp-notice" dismissible onClose={() => setAviso(null)}>
+          {aviso.texto}
+        </Alert>
+      )}
 
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>2. Preinscripciones de jornadas pasadas</Card.Header>
-        <Card.Body className="p-4">
-          <Alert variant="info">Los equipos no presentados permanecen en el historial.</Alert>
-          <Table responsive hover variant={modoOscuro ? 'dark' : 'light'}>
-            <thead><tr><th>Equipo</th><th>Jornada</th><th>Estado</th><th>Acción</th></tr></thead>
-            <tbody>{pendientesPasados.map((a) => {
-              const d = datos.dispositivos.find((x) => x.id === a.dispositivoId);
-              const j = datos.jornadas.find((x) => x.id === a.jornadaId);
-              return <tr key={a.id}><td>{d ? `${d.marca} ${d.modelo}` : 'Sin dispositivo'}</td>
-                <td>{j?.periodo} — {j?.fecha}</td><td><Badge bg="warning" text="dark">Sin recepción</Badge></td>
-                <td><Button size="sm" variant="outline-danger" onClick={() => marcarNoPresentado(a)}>No presentado</Button></td></tr>;
-            })}
-            {!pendientesPasados.length && <tr><td colSpan={4} className="text-center">Sin preinscripciones vencidas.</td></tr>}</tbody>
-          </Table>
-        </Card.Body>
-      </Card>
-
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>3. Administración de personal</Card.Header>
-        <Card.Body className="p-4">
-          <h6 className="fw-bold">Agregar usuario manualmente</h6>
-          <Form onSubmit={handleCrearUsuario} className="mb-4">
+      <Card className="mp-section">
+        <Card.Header className="mp-section-header">
+          <span className="mp-step">01</span>
+          <div>
+            <h2>Administración de jornadas</h2>
+            <p>Programa nuevas fechas y gestiona el estado de cada jornada.</p>
+          </div>
+        </Card.Header>
+        <Card.Body className="mp-section-body">
+          <Form onSubmit={handleCrearJornada} className="mp-form-block">
             <Row className="g-3 align-items-end">
-              <Col md={6}><Form.Label>Nombre completo *</Form.Label><Form.Control name="nombre" maxLength={100} required className={controlClass}/></Col>
-              <Col md={4}><Form.Label>Rol *</Form.Label><Form.Select name="rol" required defaultValue="" className={controlClass}>
-                <option value="">Seleccione...</option>{rolesPermitidos.map((r) => <option key={r} value={r}>{etiquetasRol[r]}</option>)}
-              </Form.Select></Col>
-              <Col md={2} className="d-grid"><Button type="submit" variant={botonVariante}>Agregar</Button></Col>
-            </Row>
-          </Form>
-          <h6 className="fw-bold">Importación de personal desde CSV</h6>
-          <Form onSubmit={handleCargaMasiva}>
-            <Row className="g-3 align-items-end">
-              <Col md={10}><Form.Label>Archivo CSV UTF-8 *</Form.Label>
-                <Form.Control type="file" name="archivo" accept=".csv,text/csv" required className={controlClass}/>
-                <Form.Text>Columnas obligatorias: nombre,rol. Roles permitidos: tecnico, recepcionista, superusuario. Para Excel, exporta a CSV UTF-8.</Form.Text>
+              <Col md={5}>
+                <Form.Label htmlFor="mp-periodo">Período académico *</Form.Label>
+                <Form.Control id="mp-periodo" name="periodo" placeholder="Ej.: Primavera 2026" required className="mp-input" />
               </Col>
-              <Col md={2} className="d-grid"><Button type="submit" variant={botonVariante}>Importar</Button></Col>
+              <Col md={5}>
+                <Form.Label htmlFor="mp-fecha">Fecha de ejecución *</Form.Label>
+                <Form.Control id="mp-fecha" type="date" name="fecha" min={fechaLocal()} required className="mp-input" />
+              </Col>
+              <Col md={2} className="d-grid">
+                <Button type="submit" variant="danger" className="mp-btn-primary">Registrar jornada</Button>
+              </Col>
             </Row>
           </Form>
-          <h6 className="fw-bold mt-4">Personal registrado ({datos.usuarios.length})</h6>
-          <Table responsive hover size="sm" variant={modoOscuro ? 'dark' : 'light'}>
-            <thead><tr><th>Nombre</th><th>Rol</th></tr></thead>
-            <tbody>{datos.usuarios.map((u) => <tr key={u.id}><td>{u.nombre}</td><td>{etiquetasRol[u.rol] || u.rol}</td></tr>)}</tbody>
-          </Table>
-          <Alert variant="secondary" className="mb-0">Los usuarios nuevos pueden aparecer en las listas de asignación del prototipo. El acceso por login continúa siendo simulado y no crea credenciales reales.</Alert>
-        </Card.Body>
-      </Card>
 
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>4. Mantenedor de checklists dinámicos</Card.Header>
-        <Card.Body className="p-4">
-          <Form onSubmit={handleCrearChecklist}>
-            <Row className="g-3 align-items-end">
-              <Col md={4}><Form.Label>Servicio *</Form.Label><Form.Select name="servicioId" defaultValue="" required className={controlClass}>
-                <option value="">Seleccione...</option>{datos.servicios.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-              </Form.Select></Col>
-              <Col md={6}><Form.Label>Nueva tarea *</Form.Label><Form.Control name="descripcion" maxLength={200} required className={controlClass} placeholder="Ej: Verificar temperatura"/></Col>
-              <Col md={2} className="d-grid"><Button type="submit" variant={botonVariante}>Agregar ítem</Button></Col>
-            </Row>
-          </Form>
-          <h6 className="fw-bold mt-4">Plantillas registradas</h6>
-          {datos.plantillasChecklist.map((p) => {
-            const servicio = datos.servicios.find((s) => s.id === p.servicioId);
-            return <section key={p.id} className="border rounded-3 p-3 mb-3"><h6>{servicio?.nombre || p.servicioId}</h6>
-              <ol className="mb-0">{p.items.map((i) => <li key={i.id}>{i.descripcion}</li>)}</ol></section>;
-          })}
-        </Card.Body>
-      </Card>
-
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>5. Datos iniciales de demostración</Card.Header>
-        <Card.Body className="p-4">
-          <p className={modoOscuro ? 'text-light' : 'text-muted'}>Elimina únicamente las dos atenciones originales de ejemplo identificadas por el sistema. No elimina los registros nuevos.</p>
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <span>Ejemplos detectados: <strong>{ejemplos.length}</strong></span>
-            <Button variant="outline-danger" disabled={!ejemplos.length} onClick={limpiarEjemplos}>Eliminar ejemplos originales</Button>
+          <div className="mp-subheading">
+            <div>
+              <h3>Jornadas registradas</h3>
+              <p>Consulta las fechas y acciones disponibles.</p>
+            </div>
+            <span className="mp-count">{jornadas.length} {jornadas.length === 1 ? 'jornada' : 'jornadas'}</span>
+          </div>
+          <div className="mp-table-wrapper">
+            <Table responsive hover className="mp-table mb-0">
+              <thead>
+                <tr><th>Período</th><th>Fecha</th><th>Estado</th><th>Acción</th></tr>
+              </thead>
+              <tbody>
+                {jornadas.map((j) => {
+                  const estado = obtenerEstadoJornada(j);
+                  const iniciar = estado === 'programada' && j.fecha === fechaLocal();
+                  const cerrar = ['activa', 'pendiente_cierre'].includes(estado);
+                  return (
+                    <tr key={j.id}>
+                      <td><strong>{j.periodo}</strong></td>
+                      <td>{j.fecha}</td>
+                      <td>
+                        <Badge bg={colores[estado] || 'secondary'} text={estado === 'pendiente_cierre' ? 'dark' : undefined}>
+                          {etiquetasEstadoJornada[estado] || estado}
+                        </Badge>
+                      </td>
+                      <td>
+                        {iniciar && <Button size="sm" variant="outline-success" onClick={() => iniciarJornada(j)}>Iniciar</Button>}
+                        {cerrar && <Button size="sm" variant="outline-danger" onClick={() => cerrarJornada(j)}>Cerrar</Button>}
+                        {!iniciar && !cerrar && <span className="mp-muted">Sin acciones</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!jornadas.length && (
+                  <tr><td colSpan={4} className="mp-empty">Todavía no hay jornadas registradas.</td></tr>
+                )}
+              </tbody>
+            </Table>
           </div>
         </Card.Body>
       </Card>
-    </>
+
+      <Card className="mp-section">
+        <Card.Header className="mp-section-header">
+          <span className="mp-step">02</span>
+          <div>
+            <h2>Preinscripciones de jornadas pasadas</h2>
+            <p>Identifica a los equipos que no se presentaron a su jornada.</p>
+          </div>
+          <span className="mp-count mp-header-count">{pendientesPasados.length} pendientes</span>
+        </Card.Header>
+        <Card.Body className="mp-section-body">
+          <Alert variant="info" className="mp-info-banner">
+            Los equipos marcados como no presentados permanecen en el historial.
+          </Alert>
+          <div className="mp-table-wrapper">
+            <Table responsive hover className="mp-table mb-0">
+              <thead><tr><th>Equipo</th><th>Jornada</th><th>Estado</th><th>Acción</th></tr></thead>
+              <tbody>
+                {pendientesPasados.map((a) => {
+                  const d = datos.dispositivos.find((x) => x.id === a.dispositivoId);
+                  const j = datos.jornadas.find((x) => x.id === a.jornadaId);
+                  return (
+                    <tr key={a.id}>
+                      <td><strong>{d ? `${d.marca} ${d.modelo}` : 'Sin dispositivo'}</strong></td>
+                      <td>{j?.periodo} — {j?.fecha}</td>
+                      <td><Badge bg="warning" text="dark">Sin recepción</Badge></td>
+                      <td>
+                        <Button size="sm" variant="outline-danger" onClick={() => marcarNoPresentado(a)}>
+                          No presentado
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!pendientesPasados.length && (
+                  <tr><td colSpan={4} className="mp-empty">No hay preinscripciones vencidas.</td></tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Card className="mp-section">
+        <Card.Header className="mp-section-header">
+          <span className="mp-step">03</span>
+          <div>
+            <h2>Administración de personal</h2>
+            <p>Agrega integrantes individualmente o importa un archivo CSV.</p>
+          </div>
+        </Card.Header>
+        <Card.Body className="mp-section-body">
+          <div className="mp-two-columns">
+            <div className="mp-inner-card">
+              <h3>Agregar usuario</h3>
+              <p className="mp-muted">Registra un integrante del equipo.</p>
+              <Form onSubmit={handleCrearUsuario}>
+                <Row className="g-3">
+                  <Col xs={12}>
+                    <Form.Label htmlFor="mp-nombre">Nombre completo *</Form.Label>
+                    <Form.Control id="mp-nombre" name="nombre" maxLength={100} required className="mp-input" placeholder="Nombre y apellido" />
+                  </Col>
+                  <Col xs={12}>
+                    <Form.Label htmlFor="mp-rol">Rol *</Form.Label>
+                    <Form.Select id="mp-rol" name="rol" required defaultValue="" className="mp-select">
+                      <option value="">Seleccione...</option>
+                      {rolesPermitidos.map((r) => <option key={r} value={r}>{etiquetasRol[r]}</option>)}
+                    </Form.Select>
+                  </Col>
+                  <Col xs={12} className="d-grid">
+                    <Button type="submit" variant="danger" className="mp-btn-primary">Agregar integrante</Button>
+                  </Col>
+                </Row>
+              </Form>
+            </div>
+            <div className="mp-inner-card">
+              <h3>Importación desde CSV</h3>
+              <p className="mp-muted">Carga varios integrantes desde un archivo UTF-8.</p>
+              <Form onSubmit={handleCargaMasiva}>
+                <Form.Label htmlFor="mp-archivo">Archivo CSV UTF-8 *</Form.Label>
+                <Form.Control id="mp-archivo" type="file" name="archivo" accept=".csv,text/csv" required className="mp-input" />
+                <Form.Text className="mp-helper">
+                  Columnas obligatorias: <code>nombre,rol</code>. Roles: tecnico, recepcionista, superusuario. En Excel, exporta a CSV UTF-8.
+                </Form.Text>
+                <div className="d-grid mt-3">
+                  <Button type="submit" variant="danger" className="mp-btn-primary">Importar personal</Button>
+                </div>
+              </Form>
+            </div>
+          </div>
+          <div className="mp-subheading">
+            <div>
+              <h3>Personal registrado</h3>
+              <p>Usuarios disponibles para las operaciones del prototipo.</p>
+            </div>
+            <span className="mp-count">{datos.usuarios.length} integrantes</span>
+          </div>
+          <div className="mp-table-wrapper">
+            <Table responsive hover className="mp-table mb-0">
+              <thead><tr><th>Nombre</th><th>Rol</th></tr></thead>
+              <tbody>
+                {datos.usuarios.map((u) => (
+                  <tr key={u.id}>
+                    <td><strong>{u.nombre}</strong></td>
+                    <td><span className="mp-role">{etiquetasRol[u.rol] || u.rol}</span></td>
+                  </tr>
+                ))}
+                {!datos.usuarios.length && (
+                  <tr><td colSpan={2} className="mp-empty">No hay personal registrado.</td></tr>
+                )}
+              </tbody>
+            </Table>
+          </div>
+          <Alert variant="secondary" className="mp-help-note mb-0 mt-3">
+            Los integrantes nuevos pueden aparecer en las listas de asignación. El acceso por login continúa siendo simulado: agregar un usuario no crea credenciales reales.
+          </Alert>
+        </Card.Body>
+      </Card>
+
+      <Card className="mp-section">
+        <Card.Header className="mp-section-header">
+          <span className="mp-step">04</span>
+          <div>
+            <h2>Checklists dinámicos</h2>
+            <p>Amplía las tareas de revisión según el servicio técnico.</p>
+          </div>
+        </Card.Header>
+        <Card.Body className="mp-section-body">
+          <Form onSubmit={handleCrearChecklist} className="mp-form-block">
+            <Row className="g-3 align-items-end">
+              <Col md={4}>
+                <Form.Label htmlFor="mp-servicio">Servicio *</Form.Label>
+                <Form.Select id="mp-servicio" name="servicioId" defaultValue="" required className="mp-select">
+                  <option value="">Seleccione...</option>
+                  {datos.servicios.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                </Form.Select>
+              </Col>
+              <Col md={6}>
+                <Form.Label htmlFor="mp-descripcion">Nueva tarea *</Form.Label>
+                <Form.Control id="mp-descripcion" name="descripcion" maxLength={200} required className="mp-input" placeholder="Ej.: Verificar temperatura" />
+              </Col>
+              <Col md={2} className="d-grid">
+                <Button type="submit" variant="danger" className="mp-btn-primary">Agregar ítem</Button>
+              </Col>
+            </Row>
+          </Form>
+          <div className="mp-subheading">
+            <div>
+              <h3>Plantillas registradas</h3>
+              <p>Lista de tareas disponibles para cada servicio.</p>
+            </div>
+            <span className="mp-count">{datos.plantillasChecklist.length} plantillas</span>
+          </div>
+          <div className="mp-templates">
+            {datos.plantillasChecklist.map((p) => {
+              const servicio = datos.servicios.find((s) => s.id === p.servicioId);
+              return (
+                <section key={p.id} className="mp-template">
+                  <div className="mp-template-header">
+                    <h4>{servicio?.nombre || p.servicioId}</h4>
+                    <span className="mp-count">{p.items.length} tareas</span>
+                  </div>
+                  <ol>
+                    {p.items.map((i) => <li key={i.id}>{i.descripcion}</li>)}
+                  </ol>
+                </section>
+              );
+            })}
+            {!datos.plantillasChecklist.length && (
+              <p className="mp-empty">No hay plantillas registradas.</p>
+            )}
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Card className="mp-section mp-section-danger">
+        <Card.Header className="mp-section-header">
+          <span className="mp-step">05</span>
+          <div>
+            <h2>Datos iniciales de demostración</h2>
+            <p>Elimina exclusivamente los registros de ejemplo que reconoce el sistema.</p>
+          </div>
+        </Card.Header>
+        <Card.Body className="mp-section-body">
+          <div className="mp-demo-action">
+            <div>
+              <p className="mb-1">Ejemplos originales detectados: <strong>{ejemplos.length}</strong></p>
+              <p className="mp-muted mb-0">No elimina los registros nuevos. La eliminación solicita confirmación.</p>
+            </div>
+            <Button variant="outline-danger" disabled={!ejemplos.length} onClick={limpiarEjemplos}>
+              Eliminar ejemplos originales
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
+    </section>
   );
 }

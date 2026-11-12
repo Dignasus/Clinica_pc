@@ -1,0 +1,100 @@
+/* Diseño aislado: no cambia los estilos del dashboard ni del resto de la app. */
+.cpc-login, .cpc-login * { box-sizing: border-box; }
+.cpc-login {
+  display: grid;
+  grid-template-columns: minmax(430px, 45%) minmax(0, 1fr);
+  min-height: 100dvh;
+  background: #fff;
+  color: #171b26;
+  font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+}
+.cpc-login__left {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  min-height: 100dvh;
+  padding: clamp(30px, 4.5vw, 70px);
+}
+.cpc-login__brand { display: flex; align-items: center; gap: 20px; }
+.cpc-login__brand img { display: block; width: min(190px, 53%); height: auto; max-height: 75px; object-fit: contain; }
+.cpc-login__slogan {
+  padding-left: 19px;
+  border-left: 1px solid #acb0b8;
+  font-size: 13px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+.cpc-login__content { width: 100%; max-width: 425px; margin: auto; }
+.cpc-login__heading { display: flex; align-items: center; gap: 21px; margin-bottom: 46px; }
+.cpc-login__accent { width: 5px; height: 69px; border-radius: 5px; flex: 0 0 5px; background: #d00016; }
+.cpc-login__heading h1 { margin: 0 0 7px; font-size: clamp(29px, 3vw, 42px); line-height: 1.08; font-weight: 750; letter-spacing: -.045em; }
+.cpc-login__heading p { margin: 0; font-size: 13px; color: #687184; }
+.cpc-login__form { display: flex; flex-direction: column; gap: 0; }
+.cpc-login__form label { font-size: 14px; font-weight: 650; margin-bottom: 9px; }
+.cpc-login__form input {
+  width: 100%;
+  height: 52px;
+  margin-bottom: 25px;
+  padding: 0 16px;
+  background: #fff;
+  color: #171b26;
+  border: 1px solid #c8cbd2;
+  border-radius: 8px;
+  outline: none;
+  font-size: 15px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.cpc-login__form input::placeholder { color: #8791a0; }
+.cpc-login__form input:focus { border-color: #c60018; box-shadow: 0 0 0 3px #c6001820; }
+.cpc-login__submit {
+  min-height: 53px;
+  width: 100%;
+  margin-top: 9px;
+  background: #cf0018;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+}
+.cpc-login__submit:hover { background: #b40016; }
+.cpc-login__submit:focus-visible { outline: 3px solid #b40016; outline-offset: 3px; }
+.cpc-login__error {
+  margin: -7px 0 12px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid #fecdd3;
+  background: #fff1f2;
+  color: #9f1239;
+  font-size: 13px;
+}
+.cpc-login__footer { font-size: 12px; color: #8791a0; }
+.cpc-login__photo { position: relative; overflow: hidden; min-height: 100dvh; background: #e0e7ef; }
+.cpc-login__photo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 48%;
+}
+@media (max-width: 900px) {
+  .cpc-login { grid-template-columns: minmax(360px, 49%) minmax(0, 1fr); }
+  .cpc-login__left { padding: 34px; }
+  .cpc-login__brand { gap: 12px; }
+  .cpc-login__slogan { font-size: 11px; padding-left: 12px; }
+}
+@media (max-width: 700px) {
+  .cpc-login { display: block; }
+  .cpc-login__left { min-height: 100dvh; padding: 30px 24px 20px; }
+  .cpc-login__content { max-width: 425px; }
+  .cpc-login__heading { margin-bottom: 36px; }
+  .cpc-login__photo { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cpc-login__form input, .cpc-login__submit { transition: none; }
+}

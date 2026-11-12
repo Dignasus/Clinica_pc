@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offcanvas } from 'react-bootstrap';
@@ -38,13 +37,12 @@ export default function PanelSuperusuario() {
       [...datos.jornadas]
         .sort((a, b) => b.fecha.localeCompare(a.fecha))
         .map((j) => j.periodo)
-        .filter(Boolean)
+        .filter(Boolean),
     ),
   ];
 
   const periodoGlobal =
-    periodoSeleccionado === 'Todos' ||
-    periodosDisponibles.includes(periodoSeleccionado)
+    periodoSeleccionado === 'Todos' || periodosDisponibles.includes(periodoSeleccionado)
       ? periodoSeleccionado
       : (periodosDisponibles[0] ?? 'Todos');
 
@@ -93,9 +91,12 @@ export default function PanelSuperusuario() {
     switch (vistaActiva) {
       case 'inicio':
         return (
-          <InicioDashboard modoOscuro={modoOscuro}
-            rolUsuario={rolUsuario} nombreUsuario={nombreUsuario}
-            periodoGlobal={periodoGlobal} />
+          <InicioDashboard
+            modoOscuro={modoOscuro}
+            rolUsuario={rolUsuario}
+            nombreUsuario={nombreUsuario}
+            periodoGlobal={periodoGlobal}
+          />
         );
 
       case 'recepcion':
@@ -133,16 +134,22 @@ export default function PanelSuperusuario() {
   };
 
   const propiedadesSidebar = {
-    nombreUsuario, vistaActiva, permisos, onSeleccionar: cambiarVista,
+    nombreUsuario,
+    rolUsuario,
+    modoOscuro,
+    vistaActiva,
+    permisos,
+    onSeleccionar: cambiarVista,
   };
 
   return (
-    <div data-bs-theme={modoOscuro ? 'dark' : 'light'}
+    <div
+      data-bs-theme={modoOscuro ? 'dark' : 'light'}
       className={`flex min-h-screen ${
-        modoOscuro ? 'bg-[#121212] text-white' : 'bg-[#f4f4f4] text-gray-900'
-      }`}>
-
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto md:block">
+        modoOscuro ? 'bg-[#15171b] text-white' : 'bg-[#f5f6f8] text-slate-900'
+      }`}
+    >
+      <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 overflow-hidden md:block">
         <Sidebar {...propiedadesSidebar} />
       </aside>
 
@@ -159,20 +166,26 @@ export default function PanelSuperusuario() {
           menuMovilAbierto={menuMovilAbierto}
         />
 
-        <main className="min-w-0 w-full flex-1 overflow-x-auto p-4 md:p-6">
+        <main id="contenido-principal" className="min-w-0 w-full flex-1 overflow-x-auto p-4 md:p-6 xl:p-8">
           {renderizarContenido()}
         </main>
       </div>
 
-      <Offcanvas show={menuMovilAbierto}
+      <Offcanvas
+        id="menu-movil-clinica"
+        show={menuMovilAbierto}
         onHide={() => setMenuMovilAbierto(false)}
-        placement="start" backdrop scroll={false} keyboard restoreFocus
+        placement="start"
+        backdrop
+        scroll={false}
+        keyboard
+        restoreFocus
         aria-labelledby="titulo-menu-movil"
         data-bs-theme="dark"
-        style={{ '--bs-offcanvas-width': 'min(18rem, 85vw)' }}>
-
-        <Offcanvas.Header closeButton className="bg-[#333333] text-white">
-          <Offcanvas.Title id="titulo-menu-movil">
+        style={{ '--bs-offcanvas-width': 'min(18rem, 85vw)' }}
+      >
+        <Offcanvas.Header closeButton className="bg-[#24272d] text-white">
+          <Offcanvas.Title id="titulo-menu-movil" className="text-base font-semibold">
             Menú de navegación
           </Offcanvas.Title>
         </Offcanvas.Header>

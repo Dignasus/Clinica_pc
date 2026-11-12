@@ -3,6 +3,7 @@ export default function TerminosLegales({
   formData,
   onChange,
   modoOscuro,
+  numeroPaso = '03',
 }) {
   return (
     <section
@@ -17,7 +18,7 @@ export default function TerminosLegales({
       {/* Encabezado */}
       <div className="flex items-center gap-4 border-b border-gray-500/20 px-6 py-5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-inacap-red text-sm font-bold text-white">
-          03
+          {numeroPaso}
         </span>
 
         <div>

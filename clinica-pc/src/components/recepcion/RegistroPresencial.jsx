@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { Alert, Badge, Button, Card, Form } from 'react-bootstrap';
+import './AtencionVisual.css';
 
 import DatosPersonales from '../inscripcion/DatosPersonales.jsx';
 import DatosEquipo from '../inscripcion/DatosEquipo.jsx';
@@ -198,18 +198,10 @@ export default function RegistroPresencial({
     ? ultimaVisita(datos, equipoReutilizado.id)
     : { visitas: [] };
 
-  // Estilos
-  const cardClass = `shadow-sm border-0 mb-4 ${
-    modoOscuro ? 'bg-dark text-light' : ''
-  }`;
-
-  const headerClass = `fw-bold py-3 ${
-    modoOscuro ? 'bg-secondary text-light' : 'bg-white'
-  }`;
-
-  const controlClass = modoOscuro
-    ? 'bg-dark text-light'
-    : '';
+  // Estilos de presentación; no intervienen en las validaciones o registros.
+  const cardClass = 'cp-card cp-register-card mb-4';
+  const headerClass = 'cp-section-head';
+  const controlClass = 'cp-control';
 
   // Cambios de campos y precarga por RUT
   const cambiarDato = (e) => {
@@ -537,40 +529,31 @@ export default function RegistroPresencial({
   };
 
   return (
-    <>
-      <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <div>
-          <h3 className="fw-bold text-danger mb-1">
-            Registro presencial
-          </h3>
-
-          <p className={
-            modoOscuro
-              ? 'text-light mb-0'
-              : 'text-muted mb-0'
-          }>
-            Registra un equipo nuevo o una nueva atención
-            de un dispositivo existente.
-          </p>
+    <section className="cp-flow cp-register" data-cp-theme={modoOscuro ? 'dark' : 'light'}>
+      <div className="cp-page-header">
+        <div className="cp-page-heading">
+          <div className="cp-eyebrow">CLÍNICA DEL PC / RECEPCIÓN</div>
+          <h1>Registro presencial</h1>
+          <p>Registra un equipo nuevo o inicia una nueva atención de un dispositivo existente.</p>
         </div>
-
-        <Button
-          variant="outline-secondary"
-          onClick={onCancelar}
-        >
-          Volver
-        </Button>
+        <div className="cp-header-meta">
+          <span className="cp-period-chip">Período: {periodoGlobal === 'Todos' ? 'Todos los períodos' : periodoGlobal}</span>
+          <Button variant="outline-secondary" className="cp-back-button" onClick={onCancelar}>
+            ← Volver a recepción
+          </Button>
+        </div>
       </div>
 
-      <Form onSubmit={registrar}>
+      <Form onSubmit={registrar} className="cp-register-form">
         {/* 1. JORNADA */}
         <Card className={cardClass}>
           <Card.Header className={headerClass}>
-            1. Jornada de atención
-          </Card.Header>
+              <span className="cp-step">01</span>
+              <span className="cp-section-heading"><h2>Jornada de atención</h2></span>
+            </Card.Header>
 
-          <Card.Body className="p-4">
-            <Form.Label className="fw-bold">
+          <Card.Body className="cp-section-body">
+            <Form.Label className="cp-field-label">
               Jornada iniciada *
             </Form.Label>
 
@@ -607,10 +590,11 @@ export default function RegistroPresencial({
         {/* 2. PROPIETARIO */}
         <Card className={cardClass}>
           <Card.Header className={headerClass}>
-            2. Datos del propietario
-          </Card.Header>
+              <span className="cp-step">02</span>
+              <span className="cp-section-heading"><h2>Datos del propietario</h2></span>
+            </Card.Header>
 
-          <Card.Body className="p-4">
+          <Card.Body className="cp-section-body">
             <DatosPersonales
               formData={formData}
               onChange={cambiarDato}
@@ -637,11 +621,12 @@ export default function RegistroPresencial({
         {dispositivosAnteriores.length > 0 && (
           <Card className={cardClass}>
             <Card.Header className={headerClass}>
-              3. Dispositivos registrados anteriormente
+              <span className="cp-step">03</span>
+              <span className="cp-section-heading"><h2>Dispositivos registrados anteriormente</h2></span>
             </Card.Header>
 
-            <Card.Body className="p-4">
-              <Form.Label className="fw-bold">
+            <Card.Body className="cp-section-body">
+              <Form.Label className="cp-field-label">
                 ¿El equipo ya fue atendido?
               </Form.Label>
 
@@ -676,20 +661,14 @@ export default function RegistroPresencial({
                 })}
               </Form.Select>
 
-              <p className={`small mt-2 mb-0 ${
-                modoOscuro ? 'text-light' : 'text-muted'
-              }`}>
+              <p className="cp-helper-text small mt-2 mb-0">
                 Utiliza el identificador y la última jornada
                 para distinguir equipos de la misma marca
                 y modelo.
               </p>
 
               {equipoReutilizado && (
-                <div className={`rounded-3 p-3 mt-3 ${
-                  modoOscuro
-                    ? 'bg-secondary text-light'
-                    : 'bg-light'
-                }`}>
+                <div className="cp-reuse-box mt-3">
                   <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
                     <strong>
                       {nombreEquipo(equipoReutilizado)}
@@ -742,10 +721,11 @@ export default function RegistroPresencial({
         {/* 4. EQUIPO Y SERVICIOS */}
         <Card className={cardClass}>
           <Card.Header className={headerClass}>
-            4. Datos del dispositivo y servicio
-          </Card.Header>
+              <span className="cp-step">04</span>
+              <span className="cp-section-heading"><h2>Datos del dispositivo y servicio</h2></span>
+            </Card.Header>
 
-          <Card.Body className="p-4">
+          <Card.Body className="cp-section-body">
             <DatosEquipo
               formData={formData}
               onChange={cambiarDato}
@@ -766,10 +746,11 @@ export default function RegistroPresencial({
         {/* 5. CONSENTIMIENTO */}
         <Card className={cardClass}>
           <Card.Header className={headerClass}>
-            5. Consentimiento
-          </Card.Header>
+              <span className="cp-step">05</span>
+              <span className="cp-section-heading"><h2>Consentimiento</h2></span>
+            </Card.Header>
 
-          <Card.Body className="p-4">
+          <Card.Body className="cp-section-body">
             <TerminosLegales
               formData={formData}
               onChange={cambiarDato}
@@ -779,7 +760,7 @@ export default function RegistroPresencial({
         </Card>
 
         {/* MENSAJES Y BOTÓN DE REGISTRO */}
-        <div className="d-grid gap-3 mb-5">
+        <div className="cp-submit-zone d-grid gap-3 mb-5">
           {error && (
             <Alert
               variant="danger"
@@ -801,8 +782,8 @@ export default function RegistroPresencial({
           <Button
             type="submit"
             size="lg"
-            className="fw-bold py-3"
-            variant={modoOscuro ? 'light' : 'danger'}
+            className="cp-primary-button cp-register-submit"
+            variant="danger"
             disabled={!jornadasAbiertas.length}
           >
             {equipoReutilizado
@@ -811,6 +792,6 @@ export default function RegistroPresencial({
           </Button>
         </div>
       </Form>
-    </>
+    </section>
   );
 }

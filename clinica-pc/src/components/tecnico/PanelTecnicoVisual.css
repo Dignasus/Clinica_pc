@@ -1,0 +1,247 @@
+/* Panel Técnico · Clínica del PC
+   Estilos aislados dentro de .pc-tech. No afecta otras pantallas. */
+.pc-tech {
+  --tec-bg: #ffffff;
+  --tec-ink: #142238;
+  --tec-muted: #64758b;
+  --tec-line: #dce3ed;
+  --tec-tint: #f4f6f9;
+  --tec-soft-red: #fff0f2;
+  --tec-accent: #e60018;
+  --tec-focus: rgba(230, 0, 24, 0.16);
+  color: var(--tec-ink);
+  width: 100%;
+  min-width: 0;
+  font-size: 14px;
+}
+.pc-tech.pc-tech--dark {
+  --tec-bg: #22262d;
+  --tec-ink: #f2f5f9;
+  --tec-muted: #aebacb;
+  --tec-line: #3a424e;
+  --tec-tint: #292f38;
+  --tec-soft-red: #3b2630;
+  --tec-accent: #ff4b60;
+  --tec-focus: rgba(255, 75, 96, 0.2);
+}
+.pc-tech, .pc-tech * { box-sizing: border-box; }
+.pc-tech-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 0 22px;
+  margin-bottom: 23px;
+  border-bottom: 1px solid var(--tec-line);
+}
+.pc-tech-eyebrow, .pc-tech-kicker {
+  color: var(--tec-accent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.25px;
+  line-height: 1.6;
+}
+.pc-tech-heading h2 {
+  margin: 6px 0 7px;
+  color: var(--tec-ink);
+  font-size: clamp(24px, 2.25vw, 33px);
+  line-height: 1.16;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+.pc-tech-heading p {
+  color: var(--tec-muted);
+  margin: 0;
+  line-height: 1.6;
+  font-size: 13px;
+}
+.pc-tech-count {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  background: var(--tec-bg);
+  border: 1px solid var(--tec-line);
+  border-radius: 12px;
+  padding: 11px 15px;
+  white-space: nowrap;
+}
+.pc-tech-count strong { font-weight: 800; font-size: 22px; color: var(--tec-ink); }
+.pc-tech-count span { color: var(--tec-muted); font-size: 12px; }
+.pc-tech .pc-tech-back,
+.pc-tech .pc-tech-secondary {
+  border: 1px solid var(--tec-line);
+  border-radius: 9px;
+  color: var(--tec-ink);
+  background: var(--tec-bg);
+  padding: 9px 14px;
+  font-weight: 700;
+  font-size: 12px;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.pc-tech .pc-tech-back:hover,
+.pc-tech .pc-tech-secondary:hover { background: var(--tec-tint); border-color: var(--tec-muted); color: var(--tec-ink); transform: translateY(-1px); }
+.pc-tech .pc-tech-primary {
+  border: 1px solid #e60018;
+  border-radius: 9px;
+  background: #e60018;
+  color: #fff;
+  padding: 9px 16px;
+  font-weight: 750;
+  font-size: 12px;
+  transition: background .18s ease, transform .18s ease;
+}
+.pc-tech .pc-tech-primary:hover,
+.pc-tech .pc-tech-primary:focus-visible { background: #bd0015; border-color: #bd0015; color: #fff; transform: translateY(-1px); }
+.pc-tech .pc-tech-primary:disabled { opacity: .6; transform: none; }
+.pc-tech .pc-tech-card {
+  background: var(--tec-bg);
+  border: 1px solid var(--tec-line) !important;
+  border-radius: 13px;
+  margin-bottom: 17px;
+  color: var(--tec-ink);
+  overflow: hidden;
+  box-shadow: 0 5px 17px rgba(14, 22, 40, .025);
+}
+.pc-tech .pc-tech-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--tec-bg);
+  color: var(--tec-ink);
+  border-bottom: 1px solid var(--tec-line);
+  padding: 17px 20px;
+}
+.pc-tech-card-head strong { display: block; color: var(--tec-ink); font-weight: 750; font-size: 14px; line-height: 1.5; }
+.pc-tech-card-head small { display: block; color: var(--tec-muted); font-size: 11px; line-height: 1.45; }
+.pc-tech-number {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  height: 37px;
+  min-width: 37px;
+  border-radius: 10px;
+  background: var(--tec-soft-red);
+  color: var(--tec-accent);
+  font-weight: 800;
+  letter-spacing: .3px;
+  font-size: 12px;
+}
+.pc-tech .pc-tech-card-body { padding: clamp(17px, 2.1vw, 26px); color: var(--tec-ink); }
+.pc-tech .pc-tech-help { color: var(--tec-muted); font-size: 12px; margin-bottom: 18px; }
+.pc-tech .form-label,
+.pc-tech .pc-tech-field-label { color: var(--tec-ink); font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+.pc-tech .pc-tech-control {
+  min-height: 42px;
+  background-color: var(--tec-bg);
+  color: var(--tec-ink);
+  border: 1px solid var(--tec-line);
+  border-radius: 9px;
+  padding: 9px 12px;
+  font-size: 13px;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.pc-tech .pc-tech-control::placeholder { color: var(--tec-muted); opacity: .86; }
+.pc-tech .pc-tech-control:focus { background: var(--tec-bg); color: var(--tec-ink); border-color: var(--tec-accent); box-shadow: 0 0 0 3px var(--tec-focus); }
+.pc-tech .pc-tech-control:disabled { opacity: .6; background: var(--tec-tint); }
+.pc-tech select.pc-tech-control { padding-right: 2.3rem; }
+.pc-tech textarea.pc-tech-control { min-height: 78px; resize: vertical; }
+.pc-tech-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.pc-tech-field-full { grid-column: 1 / -1; }
+.pc-tech .pc-tech-table { --bs-table-bg: transparent; --bs-table-color: var(--tec-ink); --bs-table-border-color: var(--tec-line); color: var(--tec-ink); margin: 0; }
+.pc-tech .table-responsive { overflow-x: auto; }
+.pc-tech .pc-tech-table thead th {
+  background: var(--tec-tint);
+  color: var(--tec-muted);
+  border-bottom: 1px solid var(--tec-line);
+  font-size: 10px;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+  padding: 16px 17px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.pc-tech .pc-tech-table tbody td {
+  color: var(--tec-ink);
+  border-color: var(--tec-line);
+  padding: 17px;
+  vertical-align: middle;
+  font-size: 12px;
+}
+.pc-tech .pc-tech-table tbody tr:hover { --bs-table-hover-bg: var(--tec-tint); --bs-table-hover-color: var(--tec-ink); }
+.pc-tech-row-id { display: block; margin-top: 4px; color: var(--tec-muted); font-size: 10px; }
+.pc-tech .pc-tech-status { padding: 7px 10px; border-radius: 7px; font-size: 11px; font-weight: 750; white-space: nowrap; }
+.pc-tech-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+.pc-tech-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 42px 14px; text-align: center; }
+.pc-tech-empty strong { color: var(--tec-ink); font-size: 14px; }
+.pc-tech-empty p { color: var(--tec-muted); font-size: 12px; margin: 0; }
+.pc-tech-empty-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--tec-tint); color: var(--tec-muted); font-size: 21px; }
+.pc-tech-summary { margin-bottom: 18px; padding: 21px 23px; border: 1px solid var(--tec-line); background: var(--tec-bg); border-radius: 13px; }
+.pc-tech-summary-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pc-tech-summary h3 { font-size: 21px; font-weight: 800; margin: 10px 0 20px; letter-spacing: -.3px; color: var(--tec-ink); }
+.pc-tech-summary-grid { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 14px; }
+.pc-tech-summary-grid > div { border-top: 1px solid var(--tec-line); padding-top: 12px; min-width: 0; }
+.pc-tech-summary-grid span, .pc-tech-summary-grid strong { display: block; overflow-wrap: anywhere; }
+.pc-tech-summary-grid span { color: var(--tec-muted); margin-bottom: 5px; font-size: 11px; }
+.pc-tech-summary-grid strong { color: var(--tec-ink); font-size: 12px; font-weight: 700; }
+.pc-tech-checklist { border: 1px solid var(--tec-line); border-radius: 11px; overflow: hidden; margin-bottom: 14px; }
+.pc-tech-checklist:last-child { margin-bottom: 0; }
+.pc-tech-checklist-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--tec-tint); padding: 15px 17px; border-bottom: 1px solid var(--tec-line); }
+.pc-tech-checklist-heading h3 { margin: 3px 0 0; color: var(--tec-ink); font-size: 14px; font-weight: 750; }
+.pc-tech-checklist-count { padding: 6px 9px; border: 1px solid var(--tec-line); border-radius: 7px; color: var(--tec-muted); background: var(--tec-bg); font-size: 11px; font-weight: 650; }
+.pc-tech .pc-tech-checklist > .alert { margin: 16px; }
+.pc-tech-task { padding: 17px; border-bottom: 1px solid var(--tec-line); }
+.pc-tech-task:last-child { border-bottom: 0; }
+.pc-tech-task-name { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 13px; }
+.pc-tech-task-name strong { color: var(--tec-ink); font-size: 13px; font-weight: 700; padding-top: 2px; }
+.pc-tech-task-index { flex: 0 0 auto; font-weight: 750; font-size: 11px; color: var(--tec-accent); padding-top: 3px; }
+.pc-tech-task-fields { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(230px, 1fr); gap: 14px; }
+.pc-tech-note { border: 1px solid var(--tec-line); background: var(--tec-tint); padding: 14px 16px; border-radius: 10px; margin-bottom: 16px; }
+.pc-tech-note p { margin: 5px 0; font-size: 13px; color: var(--tec-ink); }
+.pc-tech-note small { color: var(--tec-muted); font-size: 11px; }
+.pc-tech-service-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.pc-tech-service-option { min-height: 75px; border: 1px solid var(--tec-line); border-radius: 10px; padding: 14px 15px; background: var(--tec-bg); transition: border-color .16s ease, background .16s ease; }
+.pc-tech-service-option:hover { border-color: var(--tec-muted); }
+.pc-tech-service-option.is-selected { border-color: var(--tec-accent); background: var(--tec-soft-red); }
+.pc-tech-service-option .form-check { margin: 0; min-height: 22px; }
+.pc-tech-service-option .form-check-label { color: var(--tec-ink); font-size: 12px; font-weight: 700; cursor: pointer; }
+.pc-tech-service-option small { display: block; margin: 5px 0 0 22px; font-size: 10px; color: var(--tec-muted); }
+.pc-tech .form-check-input { border-color: var(--tec-line); }
+.pc-tech .form-check-input:checked { background-color: #e60018; border-color: #e60018; }
+.pc-tech .form-check-input:focus { box-shadow: 0 0 0 3px var(--tec-focus); border-color: var(--tec-accent); }
+.pc-tech .form-check-label { color: var(--tec-ink); }
+.pc-tech .alert { border-radius: 10px; font-size: 12px; line-height: 1.65; }
+.pc-tech .alert p { color: inherit; }
+.pc-tech .pc-tech-change-alert .form-label { color: inherit; }
+.pc-tech-submit { display: flex; flex-direction: column; gap: 12px; margin: 18px 0 40px; }
+.pc-tech-submit .pc-tech-primary { padding: 14px 20px; font-size: 14px; }
+.pc-tech-progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 22px; }
+.pc-tech-progress > div { display: flex; align-items: center; gap: 10px; min-height: 51px; background: var(--tec-bg); border: 1px solid var(--tec-line); border-radius: 10px; padding: 10px 13px; color: var(--tec-muted); }
+.pc-tech-progress > div.is-current { border-color: var(--tec-accent); background: var(--tec-soft-red); color: var(--tec-ink); }
+.pc-tech-progress > div.is-done { color: var(--tec-ink); }
+.pc-tech-progress > div > span { font-size: 11px; font-weight: 800; color: var(--tec-accent); }
+.pc-tech-progress > div > strong { font-size: 12px; font-weight: 750; }
+.pc-tech-delivery .pc-tech-card .pc-tech-primary { padding: 11px 19px; font-size: 13px; }
+.pc-tech-delivery .pc-tech-card .form-group { margin-bottom: 16px; }
+.pc-tech--dark .pc-tech-card .text-muted { color: var(--tec-muted) !important; }
+@media (max-width: 800px) {
+  .pc-tech-summary-grid { grid-template-columns: 1fr 1fr; }
+  .pc-tech-summary-wide { grid-column: 1 / -1; }
+  .pc-tech-task-fields { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .pc-tech-fields, .pc-tech-summary-grid { grid-template-columns: 1fr; }
+  .pc-tech-field-full, .pc-tech-summary-wide { grid-column: auto; }
+  .pc-tech-heading { align-items: stretch; }
+  .pc-tech-heading .pc-tech-back { width: 100%; }
+  .pc-tech-progress { gap: 5px; }
+  .pc-tech-progress > div { padding: 9px 7px; flex-direction: column; gap: 3px; justify-content: center; text-align: center; }
+  .pc-tech-progress > div > strong { font-size: 10px; }
+  .pc-tech .pc-tech-card-head { padding: 14px; }
+  .pc-tech .pc-tech-card-body { padding: 15px; }
+  .pc-tech .pc-tech-summary { padding: 16px; }
+  .pc-tech-service-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-tech .pc-tech-back, .pc-tech .pc-tech-secondary, .pc-tech .pc-tech-primary, .pc-tech .pc-tech-control, .pc-tech-service-option { transition: none; }
+}

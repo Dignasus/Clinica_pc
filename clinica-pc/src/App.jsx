@@ -1,11 +1,10 @@
-
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Login from './pages/Login';
 import PanelSuperusuario from './pages/PanelSuperusuario';
 import InscripcionQR from './components/InscripcionQR';
 
-// Protección básica de rutas del prototipo
+// Protección básica de rutas del prototipo.
 function RutaProtegida({ children }) {
   const autenticado = sessionStorage.getItem('authToken');
 
@@ -16,19 +15,12 @@ function RutaProtegida({ children }) {
   return children;
 }
 
-// Portal público para propietarios que escanean el QR
+// Portal público: InscripcionQR incorpora su título y selector de tema.
 function InscripcionPublica() {
   return (
-    <div data-bs-theme="light" className="min-vh-100 bg-light">
-      <main className="container py-4 py-md-5" style={{ maxWidth: '960px' }}>
-        <header className="text-center mb-4">
-          <h1 className="fw-bold text-danger">Clínica del PC</h1>
-          <p className="text-muted mb-0">
-            Servicio de atención y mantenimiento de equipos computacionales.
-          </p>
-        </header>
-
-        <InscripcionQR modoOscuro={false} />
+    <div className="min-vh-100">
+      <main className="mx-auto w-100 px-2 px-sm-3 py-2 py-md-4" style={{ maxWidth: '960px' }}>
+        <InscripcionQR />
       </main>
     </div>
   );

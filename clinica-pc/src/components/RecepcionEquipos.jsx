@@ -1,6 +1,6 @@
-
 import { useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from 'react-bootstrap';
+import './recepcion/AtencionVisual.css';
 import { useClinica } from '../context/clinicaContextBase.js';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
 
@@ -120,76 +120,97 @@ export default function RecepcionEquipos({
     });
   };
 
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const headerClass = `fw-bold py-3 ${modoOscuro ? 'bg-secondary text-light' : 'bg-white'}`;
-  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
-
   return (
-    <>
-      <div className="mb-4">
-        <h3 className="fw-bold" style={{ color: titleColor }}>Recepción de Equipos</h3>
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-          Busca propietarios y confirma la llegada de dispositivos.
-          Período: {periodoGlobal === 'Todos' ? 'Todos' : periodoGlobal}.
-        </p>
+    <section className="cp-flow cp-reception" data-cp-theme={modoOscuro ? 'dark' : 'light'}>
+      <div className="cp-page-header">
+        <div className="cp-page-heading">
+          <div className="cp-eyebrow">CLÍNICA DEL PC / OPERACIONES</div>
+          <h1>Recepción de equipos</h1>
+          <p>Busca preinscripciones, verifica los datos del dispositivo y asígnalo a un técnico.</p>
+        </div>
+        <div className="cp-header-meta" aria-label="Resumen de la recepción">
+          <span className="cp-period-chip">Período: {periodoGlobal === 'Todos' ? 'Todos los períodos' : periodoGlobal}</span>
+          <span className="cp-count-chip"><strong>{pendientes.length}</strong> pendientes</span>
+        </div>
       </div>
 
       {aviso && (
-        <Alert variant={aviso.tipo} dismissible onClose={() => setAviso(null)}>
+        <Alert variant={aviso.tipo} dismissible onClose={() => setAviso(null)} className="cp-notice">
           {aviso.texto}
         </Alert>
       )}
 
-      <Row className="g-4">
+      <Row className="g-3 g-xl-4 align-items-start">
         <Col lg={7}>
-          <Card className={cardClass}>
-            <Card.Header className={headerClass}>1. Buscar preinscripción</Card.Header>
-            <Card.Body className="p-4">
-              <Form onSubmit={buscarCliente} className="mb-4">
-                <div className="d-flex gap-2">
-                  <Form.Control value={rutBusqueda} className={controlClass}
-                    placeholder="Ingrese RUT o nombre..."
+          <Card className="cp-card">
+            <Card.Header className="cp-section-head">
+              <span className="cp-step">01</span>
+              <div className="cp-section-heading">
+                <h2>Buscar preinscripción</h2>
+                <p>Encuentra una atención pendiente por RUT o nombre.</p>
+              </div>
+            </Card.Header>
+            <Card.Body className="cp-section-body">
+              <Form onSubmit={buscarCliente} className="cp-search-form">
+                <Form.Label htmlFor="cp-rut-busqueda" className="cp-field-label">RUT o nombre del propietario</Form.Label>
+                <div className="cp-search-row">
+                  <Form.Control
+                    id="cp-rut-busqueda"
+                    value={rutBusqueda}
+                    placeholder="Ej.: 12.345.678-9 o nombre"
                     onChange={(e) => {
                       setRutBusqueda(e.target.value);
                       setSeleccionId(null);
-                    }} />
-                  <Button type="submit" variant={modoOscuro ? 'light' : 'danger'}>
-                    Buscar
-                  </Button>
+                    }}
+                  />
+                  <Button type="submit" className="cp-primary-button">Buscar</Button>
                 </div>
               </Form>
 
-              <h6 className="fw-bold mb-3">Equipos pendientes de recepción</h6>
+              <div className="cp-list-heading">
+                <div>
+                  <h3>Equipos pendientes</h3>
+                  <p>Selecciona el equipo que llegó a la clínica.</p>
+                </div>
+                <span className="cp-list-count">{filtrados.length} resultado{filtrados.length === 1 ? '' : 's'}</span>
+              </div>
 
-              <Table responsive hover variant={modoOscuro ? 'dark' : 'light'}
-                className="align-middle mb-0">
+              <Table responsive hover className="cp-results-table align-middle mb-0">
                 <thead>
                   <tr>
-                    <th>RUT</th><th>Propietario</th><th>Equipo</th>
-                    <th>Jornada</th><th className="text-end">Acción</th>
+                    <th>RUT</th>
+                    <th>Propietario</th>
+                    <th>Equipo</th>
+                    <th>Jornada</th>
+                    <th className="text-end">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtrados.map((equipo) => (
-                    <tr key={equipo.id}>
-                      <td>{equipo.rut}</td>
-                      <td>{equipo.nombre}</td>
+                    <tr key={equipo.id} className={seleccionId === equipo.id ? 'cp-row-selected' : ''}>
+                      <td className="cp-cell-nowrap">{equipo.rut}</td>
+                      <td className="cp-cell-strong">{equipo.nombre}</td>
                       <td>{equipo.equipo}</td>
-                      <td>{equipo.jornada}</td>
+                      <td className="cp-cell-nowrap">{equipo.jornada}</td>
                       <td className="text-end">
-                        <Button size="sm" variant="outline-danger"
-                          onClick={() => seleccionarEquipo(equipo)}>
-                          Seleccionar
+                        <Button
+                          size="sm"
+                          className="cp-outline-button"
+                          onClick={() => seleccionarEquipo(equipo)}
+                        >
+                          {seleccionId === equipo.id ? 'Seleccionado' : 'Seleccionar'}
                         </Button>
                       </td>
                     </tr>
                   ))}
-
                   {filtrados.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="text-center py-4">
-                        No hay equipos pendientes con esa búsqueda.
+                      <td colSpan={5}>
+                        <div className="cp-table-empty">
+                          <span className="cp-empty-symbol" aria-hidden="true">⌕</span>
+                          <strong>No hay equipos pendientes</strong>
+                          <p>No encontramos coincidencias para esta búsqueda y período.</p>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -201,67 +222,86 @@ export default function RecepcionEquipos({
 
         <Col lg={5}>
           {seleccionado ? (
-            <Card className={cardClass}>
-              <Card.Header className={headerClass}>2. Recepción y asignación</Card.Header>
-              <Card.Body className="p-4">
-                <h4 className="fw-bold text-danger">{seleccionado.nombre}</h4>
-
-                <div className={`rounded-3 p-3 mb-3 ${
-                  modoOscuro ? 'bg-secondary text-light' : 'bg-light'
-                }`}>
-                  <p><strong>RUT:</strong> {seleccionado.rut}</p>
-                  <p><strong>Equipo:</strong> {seleccionado.equipo}</p>
-                  <p><strong>Falla:</strong> {seleccionado.falla}</p>
-                  <p><strong>Servicios:</strong> {seleccionado.servicios}</p>
-                  <p><strong>Período:</strong> {seleccionado.periodo}</p>
-                  <p><strong>Jornada:</strong> {seleccionado.jornada}</p>
-                  <p><strong>Origen:</strong> {
-                    seleccionado.origen === 'presencial' ? 'Presencial' : 'Preinscripción QR'
-                  }</p>
-                  <p className="mb-0"><strong>Estado:</strong>{' '}
-                    <Badge bg={puedeRecibir ? 'success' : 'secondary'}>
-                      {etiquetasEstadoJornada[seleccionado.estadoJornada]}
-                    </Badge>
-                  </p>
+            <Card className="cp-card cp-assignment-card">
+              <Card.Header className="cp-section-head">
+                <span className="cp-step">02</span>
+                <div className="cp-section-heading">
+                  <h2>Recepción y asignación</h2>
+                  <p>Revisa los datos antes de confirmar.</p>
+                </div>
+              </Card.Header>
+              <Card.Body className="cp-section-body">
+                <div className="cp-selected-owner">
+                  <span className="cp-owner-label">PROPIETARIO</span>
+                  <h3>{seleccionado.nombre}</h3>
+                  <span>{seleccionado.rut}</span>
                 </div>
 
+                <dl className="cp-detail-list">
+                  <div><dt>Equipo</dt><dd>{seleccionado.equipo}</dd></div>
+                  <div><dt>Falla informada</dt><dd>{seleccionado.falla}</dd></div>
+                  <div><dt>Servicios</dt><dd>{seleccionado.servicios || 'No informados'}</dd></div>
+                  <div><dt>Período</dt><dd>{seleccionado.periodo}</dd></div>
+                  <div><dt>Jornada</dt><dd>{seleccionado.jornada}</dd></div>
+                  <div><dt>Origen</dt><dd>{seleccionado.origen === 'presencial' ? 'Presencial' : 'Preinscripción QR'}</dd></div>
+                  <div>
+                    <dt>Estado de jornada</dt>
+                    <dd>
+                      <Badge bg={puedeRecibir ? 'success' : 'secondary'}>
+                        {etiquetasEstadoJornada[seleccionado.estadoJornada] || seleccionado.estadoJornada}
+                      </Badge>
+                    </dd>
+                  </div>
+                </dl>
+
                 {!puedeRecibir && (
-                  <Alert variant="warning">
-                    Para recepcionar este dispositivo, la jornada debe estar
-                    iniciada y corresponder a la fecha de hoy.
+                  <Alert variant="warning" className="cp-notice">
+                    Para recepcionar este dispositivo, la jornada debe estar iniciada y corresponder a la fecha de hoy.
                   </Alert>
                 )}
 
                 <Form onSubmit={asignarEquipo}>
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-bold">Asignar técnico *</Form.Label>
-                    <Form.Select required value={tecnicoId} className={controlClass}
+                  <Form.Group className="mb-3" controlId="cp-tecnico-asignado">
+                    <Form.Label className="cp-field-label">Asignar técnico <span className="cp-required">*</span></Form.Label>
+                    <Form.Select
+                      required
+                      value={tecnicoId}
                       disabled={!puedeRecibir}
-                      onChange={(e) => setTecnicoId(e.target.value)}>
+                      onChange={(e) => setTecnicoId(e.target.value)}
+                    >
                       <option value="">Seleccione técnico...</option>
                       {tecnicos.map((t) => (
                         <option key={t.id} value={t.id}>{t.nombre}</option>
                       ))}
                     </Form.Select>
                   </Form.Group>
-
-                  <Button type="submit" className="w-100 fw-bold"
-                    variant={modoOscuro ? 'light' : 'danger'}
-                    disabled={!puedeRecibir || !tecnicoId}>
+                  <Button
+                    type="submit"
+                    className="cp-primary-button cp-wide-button"
+                    disabled={!puedeRecibir || !tecnicoId}
+                  >
                     Confirmar recepción y asignar
                   </Button>
                 </Form>
               </Card.Body>
             </Card>
           ) : (
-            <Card className={cardClass}>
-              <Card.Body className="text-center p-5">
-                Selecciona un dispositivo para confirmar su recepción y asignar un técnico.
+            <Card className="cp-card cp-waiting-card">
+              <Card.Body className="cp-waiting-content">
+                <div className="cp-waiting-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="14" rx="2" />
+                    <path d="M8 22h8M12 18v4M8 10h8M8 13h5" />
+                  </svg>
+                </div>
+                <span className="cp-eyebrow">SIGUIENTE PASO</span>
+                <h2>Recepción y asignación</h2>
+                <p>Selecciona un dispositivo de la lista para revisar su ficha y asignarle un técnico.</p>
               </Card.Body>
             </Card>
           )}
         </Col>
       </Row>
-    </>
+    </section>
   );
 }

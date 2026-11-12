@@ -1,6 +1,7 @@
 
-import { useState } from 'react';
-import { Card, Form, Button, Alert } from 'react-bootstrap';
+import { useEffect, useState } from 'react';
+import { Form, Button, Alert } from 'react-bootstrap';
+import './inscripcion/InscripcionQRVisual.css';
 
 import DatosPersonales from './inscripcion/DatosPersonales.jsx';
 import DatosEquipo from './inscripcion/DatosEquipo.jsx';
@@ -36,7 +37,42 @@ const formularioInicial = {
   aceptaTerminos: false,
 };
 
-export default function InscripcionQR({ modoOscuro = false }) {
+
+const TEMA_KEY = 'clinica-pc-tema';
+
+export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false }) {
+  // La ruta pública no tiene el Header del panel, por eso gestiona su propio botón.
+  const [modoOscuro, setModoOscuro] = useState(() => {
+    try {
+      const preferencia = localStorage.getItem(TEMA_KEY);
+      if (preferencia === 'oscuro') return true;
+      if (preferencia === 'claro') return false;
+    } catch {
+      // Sin acceso a localStorage, sigue funcionando con el valor inicial.
+    }
+    return Boolean(modoOscuroInicial);
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TEMA_KEY, modoOscuro ? 'oscuro' : 'claro');
+    } catch {
+      // El tema sigue siendo seleccionable sin persistencia.
+    }
+  }, [modoOscuro]);
+
+  const botonTema = (
+    <button
+      type="button"
+      className="cp-qr__theme-toggle"
+      onClick={() => setModoOscuro((anterior) => !anterior)}
+      aria-label={modoOscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      aria-pressed={modoOscuro}
+    >
+      <span aria-hidden="true">{modoOscuro ? '☀' : '☾'}</span>
+      {modoOscuro ? 'Modo claro' : 'Modo oscuro'}
+    </button>
+  );
   const { datos, dispatch } = useClinica();
 
   const [formData, setFormData] = useState(formularioInicial);
@@ -47,17 +83,6 @@ export default function InscripcionQR({ modoOscuro = false }) {
   const jornadasDisponibles = [...datos.jornadas]
     .filter(jornadaPermiteInscripcion)
     .sort((a, b) => a.fecha.localeCompare(b.fecha));
-
-  const cardClass = `shadow-sm border-0 mb-4 ${
-    modoOscuro ? 'bg-dark text-light' : ''
-  }`;
-
-  const headerClass = `fw-bold py-3 ${
-    modoOscuro ? 'bg-secondary text-light' : 'bg-white'
-  }`;
-
-  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -269,171 +294,174 @@ export default function InscripcionQR({ modoOscuro = false }) {
 
   if (confirmacion) {
     return (
-      <Card className={cardClass}>
-        <Card.Body className="p-4 p-md-5 text-center" aria-live="polite">
-          <div className="fs-1 mb-3 text-success" aria-hidden="true">
-            ✓
-          </div>
-
-          <h3 className="text-success fw-bold">
-            ¡Preinscripción registrada!
-          </h3>
-
-          <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-            Tu dispositivo quedó registrado para la jornada seleccionada.
+      <div className="cp-qr" data-cp-qr-theme={modoOscuro ? 'dark' : 'light'} data-bs-theme={modoOscuro ? 'dark' : 'light'}>
+        <div className="cp-qr__theme-row">{botonTema}</div>
+        <div className="cp-qr__confirmation" aria-live="polite">
+          <div className="cp-qr__success-symbol" aria-hidden="true">✓</div>
+          <p className="cp-qr__eyebrow">CLÍNICA DEL PC / REGISTRO COMPLETADO</p>
+          <h1>¡Preinscripción registrada!</h1>
+          <p className="cp-qr__lead">
+            Tu equipo quedó preinscrito para la jornada seleccionada.
+            Presenta el dispositivo en recepción durante esa jornada.
           </p>
 
-          <div className={`text-start p-4 rounded-3 my-4 ${
-            modoOscuro ? 'bg-secondary' : 'bg-light'
-          }`}>
-            <p><strong>Propietario:</strong> {confirmacion.nombre}</p>
-            <p><strong>Equipo:</strong> {confirmacion.equipo}</p>
-            <p><strong>Región:</strong> {confirmacion.region}</p>
-            <p><strong>Comuna:</strong> {confirmacion.comuna}</p>
-            <p><strong>Jornada:</strong> {confirmacion.jornada}</p>
-
-            <p>
-              <strong>Fecha de registro:</strong>{' '}
-              {new Date(confirmacion.fechaRegistro).toLocaleString('es-CL')}
-            </p>
-
-            <p className="mb-0">
-              <strong>N.º de atención:</strong> {confirmacion.atencionId}
-            </p>
-          </div>
+          <section className="cp-qr__receipt" aria-label="Resumen de la preinscripción">
+            <div className="cp-qr__receipt-head">
+              <div>
+                <span className="cp-qr__caption">COMPROBANTE</span>
+                <h2>Resumen de la inscripción</h2>
+              </div>
+              <span className="cp-qr__receipt-status">Registrada</span>
+            </div>
+            <dl className="cp-qr__receipt-grid">
+              <div><dt>Propietario</dt><dd>{confirmacion.nombre}</dd></div>
+              <div><dt>Dispositivo</dt><dd>{confirmacion.equipo}</dd></div>
+              <div><dt>Región</dt><dd>{confirmacion.region}</dd></div>
+              <div><dt>Comuna</dt><dd>{confirmacion.comuna}</dd></div>
+              <div><dt>Jornada</dt><dd>{confirmacion.jornada}</dd></div>
+              <div>
+                <dt>Fecha de registro</dt>
+                <dd>{new Date(confirmacion.fechaRegistro).toLocaleString('es-CL')}</dd>
+              </div>
+              <div className="cp-qr__receipt-id">
+                <dt>Número de atención</dt>
+                <dd>{confirmacion.atencionId}</dd>
+              </div>
+            </dl>
+          </section>
 
           {confirmacion.esReingreso && (
-            <Alert variant="success" className="text-start">
-              El equipo fue reconocido como un dispositivo registrado
-              anteriormente. Se creó una nueva atención conservando
-              la ficha del dispositivo.
+            <Alert variant="success" className="cp-qr__notice">
+              El equipo fue reconocido como un dispositivo registrado anteriormente.
+              Se creó una nueva atención conservando la ficha del dispositivo.
             </Alert>
           )}
 
-          <Alert variant="info" className="text-start">
-            Esta confirmación corresponde a la preinscripción.
-            Debes presentar el equipo en recepción durante
-            la jornada para continuar la atención.
+          <Alert variant="info" className="cp-qr__notice">
+            Esta confirmación corresponde a una <strong>preinscripción</strong>.
+            Debes presentar el equipo en recepción durante la jornada para continuar la atención.
           </Alert>
 
-          <div className="d-flex flex-wrap justify-content-center gap-3 mt-4">
-            <Button variant={modoOscuro ? 'light' : 'danger'}
-              onClick={agregarOtroEquipo} className="fw-bold">
+          <div className="cp-qr__receipt-actions">
+            <Button variant="danger" className="cp-qr__primary" onClick={agregarOtroEquipo}>
               Agregar otro dispositivo
             </Button>
-
-            <Button variant="outline-secondary" onClick={nuevaInscripcion}>
+            <Button variant="outline-secondary" className="cp-qr__secondary" onClick={nuevaInscripcion}>
               Nueva inscripción
             </Button>
           </div>
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <div className="mb-4">
-        <h3 className="fw-bold" style={{ color: titleColor }}>
-          Preinscripción de Equipos
-        </h3>
-
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-          Selecciona una jornada y registra los datos
-          del propietario y su dispositivo.
-        </p>
-      </div>
+    <div className="cp-qr" data-cp-qr-theme={modoOscuro ? 'dark' : 'light'} data-bs-theme={modoOscuro ? 'dark' : 'light'}>
+      <header className="cp-qr__intro">
+        <div className="cp-qr__intro-text">
+          <span className="cp-qr__eyebrow">CLÍNICA DEL PC / INSCRIPCIÓN</span>
+          <h1>Preinscripción de equipos</h1>
+          <p>
+            Selecciona una jornada y registra tus datos y los del dispositivo
+            para solicitar una atención.
+          </p>
+        </div>
+        <div className="cp-qr__header-actions">
+          {botonTema}
+          <div className="cp-qr__steps-label" aria-label="Formulario de cuatro pasos">
+            <span className="cp-qr__steps-icon" aria-hidden="true">✓</span>
+            <span><strong>4 pasos</strong><small>Formulario de inscripción</small></span>
+          </div>
+        </div>
+      </header>
 
       {error && (
-        <Alert variant="danger" onClose={() => setError('')} dismissible>
+        <Alert variant="danger" role="alert" dismissible onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
-      <Form onSubmit={handleSubmit}>
-        <Card className={cardClass}>
-          <Card.Header className={headerClass}>
-            1. Jornada de Atención
-          </Card.Header>
-
-          <Card.Body className="p-4">
-            <Form.Label className="fw-bold">
-              Selecciona la jornada *
-            </Form.Label>
-
-            <Form.Select required value={jornadaId}
-              className={controlClass}
-              onChange={(e) => setJornadaId(e.target.value)}>
-
-              <option value="">Seleccione una jornada...</option>
-
-              {jornadasDisponibles.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.periodo} — {j.fecha}
-                  {' '}({etiquetasEstadoJornada[obtenerEstadoJornada(j)]})
-                </option>
-              ))}
-            </Form.Select>
-
+      <Form onSubmit={handleSubmit} className="cp-qr__form">
+        <section className="cp-qr__section" aria-labelledby="qr-paso-jornada">
+          <div className="cp-qr__section-header">
+            <span className="cp-qr__step-number" aria-hidden="true">01</span>
+            <div>
+              <h2 id="qr-paso-jornada">Jornada de atención</h2>
+              <p>Elige la fecha en que llevarás tu equipo a la clínica.</p>
+            </div>
+          </div>
+          <div className="cp-qr__section-body">
+            <Form.Group controlId="qr-jornada">
+              <Form.Label>Selecciona la jornada <span aria-hidden="true">*</span></Form.Label>
+              <Form.Select
+                required
+                value={jornadaId}
+                onChange={(e) => setJornadaId(e.target.value)}
+              >
+                <option value="">Seleccione una jornada...</option>
+                {jornadasDisponibles.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.periodo} — {j.fecha}{' '}
+                    ({etiquetasEstadoJornada[obtenerEstadoJornada(j)]})
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
             {!jornadasDisponibles.length && (
               <Alert variant="warning" className="mt-3 mb-0">
                 No hay jornadas disponibles para preinscripción.
               </Alert>
             )}
-          </Card.Body>
-        </Card>
+          </div>
+        </section>
 
-        <Card className={cardClass}>
-          <Card.Header className={headerClass}>
-            2. Datos del Propietario
-          </Card.Header>
+        <section className="cp-qr__section" aria-labelledby="qr-paso-propietario">
+          <div className="cp-qr__section-header">
+            <span className="cp-qr__step-number" aria-hidden="true">02</span>
+            <div>
+              <h2 id="qr-paso-propietario">Datos del propietario</h2>
+              <p>Ingresa la información de contacto de quien llevará el equipo.</p>
+            </div>
+          </div>
+          <div className="cp-qr__section-body">
+            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
+          </div>
+        </section>
 
-          <Card.Body className="p-4">
-            <DatosPersonales
-              formData={formData}
-              onChange={handleChange}
-              modoOscuro={modoOscuro}
-            />
-          </Card.Body>
-        </Card>
+        <div className="cp-qr__embedded" aria-label="Paso 3: Datos del dispositivo">
+          <DatosEquipo
+            formData={formData}
+            onChange={handleChange}
+            modoOscuro={modoOscuro}
+            numeroPaso="03"
+          />
+        </div>
 
-        <Card className={cardClass}>
-          <Card.Header className={headerClass}>
-            3. Información del Dispositivo
-          </Card.Header>
+        <div className="cp-qr__embedded" aria-label="Paso 4: Consentimiento">
+          <TerminosLegales
+            formData={formData}
+            onChange={handleChange}
+            modoOscuro={modoOscuro}
+            numeroPaso="04"
+          />
+        </div>
 
-          <Card.Body className="p-4">
-            <DatosEquipo
-              formData={formData}
-              onChange={handleChange}
-              modoOscuro={modoOscuro}
-            />
-          </Card.Body>
-        </Card>
-
-        <Card className={cardClass}>
-          <Card.Header className={headerClass}>
-            4. Términos y Condiciones
-          </Card.Header>
-
-          <Card.Body className="p-4">
-            <TerminosLegales
-              formData={formData}
-              onChange={handleChange}
-              modoOscuro={modoOscuro}
-            />
-          </Card.Body>
-        </Card>
-
-        <div className="d-grid mb-5">
-          <Button type="submit"
-            variant={modoOscuro ? 'light' : 'danger'}
-            size="lg" className="fw-bold py-3"
-            disabled={!jornadasDisponibles.length}>
-            Registrar Preinscripción
+        <div className="cp-qr__submit-bar">
+          <div>
+            <strong>Antes de finalizar</strong>
+            <p>Revisa tus datos, el servicio solicitado y las condiciones de atención.</p>
+          </div>
+          <Button
+            type="submit"
+            variant="danger"
+            size="lg"
+            className="cp-qr__primary"
+            disabled={!jornadasDisponibles.length}
+          >
+            Registrar preinscripción
           </Button>
         </div>
       </Form>
-    </>
+    </div>
   );
 }

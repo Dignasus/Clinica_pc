@@ -4,6 +4,7 @@ import { useClinica } from '../context/clinicaContextBase.js';
 import ChecklistServicio from './tecnico/ChecklistServicio.jsx';
 import SeleccionServicios from './tecnico/SeleccionServicios.jsx';
 import EntregaEquipo from './tecnico/EntregaEquipo.jsx';
+import './tecnico/PanelTecnicoVisual.css';
 
 const inspeccionVacia = { encendido: '', estadoFisico: '', accesorios: '' };
 const estadosVisibles = ['asignado', 'en_proceso', 'listo_entrega', 'contactado'];
@@ -126,72 +127,95 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
     setMensaje('Trabajo técnico guardado. Puedes continuar con la verificación final.');
   };
 
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
+  const layoutClass = `pc-tech${modoOscuro ? ' pc-tech--dark' : ''}`;
+  const cardClass = 'pc-tech-card';
+  const controlClass = 'pc-tech-control';
 
   if (seleccion?.modo === 'entrega' && atencion && detalle?.dispositivo && detalle?.propietario) {
     return (
-      <EntregaEquipo key={atencion.id} atencion={atencion}
-        dispositivo={detalle.dispositivo} propietario={detalle.propietario}
-        modoOscuro={modoOscuro} onVolver={() => setSeleccion(null)}
-        onEntregada={() => {
-          setSeleccion(null);
-          setMensaje('Equipo entregado. Atención cerrada correctamente en el prototipo.');
-        }} />
+      <div className={layoutClass}>
+        <EntregaEquipo key={atencion.id} atencion={atencion}
+          dispositivo={detalle.dispositivo} propietario={detalle.propietario}
+          modoOscuro={modoOscuro} onVolver={() => setSeleccion(null)}
+          onEntregada={() => {
+            setSeleccion(null);
+            setMensaje('Equipo entregado. Atención cerrada correctamente en el prototipo.');
+          }} />
+      </div>
     );
   }
 
   if (seleccion?.modo === 'trabajo' && atencion && detalle?.dispositivo &&
     ['asignado', 'en_proceso'].includes(atencion.estado)) {
     return (
-      <>
-        <div className="d-flex justify-content-between align-items-center gap-3 mb-4">
-          <h3 className="fw-bold mb-0" style={{ color: titleColor }}>Atención Técnica</h3>
-          <Button variant="secondary" onClick={() => setSeleccion(null)}>Volver</Button>
+      <div className={layoutClass}>
+        <div className="pc-tech-heading">
+          <div>
+            <span className="pc-tech-eyebrow">CLÍNICA DEL PC / ÁREA TÉCNICA</span>
+            <h2>Atención técnica</h2>
+            <p>Documenta el estado del equipo, los servicios y cada tarea realizada.</p>
+          </div>
+          <Button type="button" variant="outline-secondary" className="pc-tech-back"
+            onClick={() => setSeleccion(null)}>Volver a la bandeja</Button>
         </div>
-        <Alert variant="secondary">
-          <strong>{detalle.dispositivo.marca} {detalle.dispositivo.modelo}</strong>
-          <div>Propietario: {detalle.propietario?.nombre} {detalle.propietario?.apellidoPaterno}</div>
-          <div>Jornada: {detalle.jornada?.fecha || 'Sin fecha'}</div>
-          <div>Falla informada: {atencion.diagnosticoPropietario || 'Sin descripción'}</div>
-        </Alert>
+
+        <div className="pc-tech-summary">
+          <div className="pc-tech-summary-head">
+            <span className="pc-tech-kicker">EQUIPO EN ATENCIÓN</span>
+            <Badge bg={atencion.estado === 'asignado' ? 'warning' : 'info'}
+              text="dark" className="pc-tech-status">
+              {etiquetas[atencion.estado]}
+            </Badge>
+          </div>
+          <h3>{detalle.dispositivo.marca} {detalle.dispositivo.modelo}</h3>
+          <div className="pc-tech-summary-grid">
+            <div><span>Propietario</span><strong>{detalle.propietario?.nombre} {detalle.propietario?.apellidoPaterno}</strong></div>
+            <div><span>Jornada</span><strong>{detalle.jornada?.fecha || 'Sin fecha'}</strong></div>
+            <div className="pc-tech-summary-wide"><span>Falla informada</span><strong>{atencion.diagnosticoPropietario || 'Sin descripción'}</strong></div>
+          </div>
+        </div>
 
         <Form onSubmit={guardarAvance}>
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">1. Inspección inicial</Card.Header>
-            <Card.Body className="p-4">
-              <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-                Registra el estado del dispositivo junto al propietario antes de intervenirlo.
-              </p>
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">¿El equipo enciende? *</Form.Label>
-                <Form.Select required value={inspeccion.encendido} className={controlClass}
-                  onChange={(e) => setInspeccion((p) => ({ ...p, encendido: e.target.value }))}>
-                  <option value="">Seleccione...</option>
-                  <option value="Sí">Sí, correctamente</option>
-                  <option value="Con fallas">Sí, con fallas</option>
-                  <option value="No">No enciende</option>
-                </Form.Select>
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Estado físico y fallas previas *</Form.Label>
-                <Form.Control as="textarea" rows={3} required className={controlClass}
-                  placeholder="Pantalla, carcasa, teclado, rayones, golpes..." value={inspeccion.estadoFisico}
-                  onChange={(e) => setInspeccion((p) => ({ ...p, estadoFisico: e.target.value }))} />
-              </Form.Group>
-              <Form.Group>
-                <Form.Label className="fw-bold">Accesorios recibidos</Form.Label>
-                <Form.Control className={controlClass} value={inspeccion.accesorios}
-                  placeholder="Ej.: cargador, mouse o funda"
-                  onChange={(e) => setInspeccion((p) => ({ ...p, accesorios: e.target.value }))} />
-              </Form.Group>
+            <Card.Header className="pc-tech-card-head">
+              <span className="pc-tech-number">01</span>
+              <div><strong>Inspección inicial</strong><small>Estado del dispositivo al ingresar al taller</small></div>
+            </Card.Header>
+            <Card.Body className="pc-tech-card-body">
+              <p className="pc-tech-help">Registra el estado del dispositivo junto al propietario antes de intervenirlo.</p>
+              <div className="pc-tech-fields">
+                <Form.Group controlId="pc-tech-encendido">
+                  <Form.Label>¿El equipo enciende? *</Form.Label>
+                  <Form.Select required value={inspeccion.encendido} className={controlClass}
+                    onChange={(e) => setInspeccion((p) => ({ ...p, encendido: e.target.value }))}>
+                    <option value="">Seleccione...</option>
+                    <option value="Sí">Sí, correctamente</option>
+                    <option value="Con fallas">Sí, con fallas</option>
+                    <option value="No">No enciende</option>
+                  </Form.Select>
+                </Form.Group>
+                <Form.Group controlId="pc-tech-accesorios">
+                  <Form.Label>Accesorios recibidos</Form.Label>
+                  <Form.Control className={controlClass} value={inspeccion.accesorios}
+                    placeholder="Ej.: cargador, mouse o funda"
+                    onChange={(e) => setInspeccion((p) => ({ ...p, accesorios: e.target.value }))} />
+                </Form.Group>
+                <Form.Group className="pc-tech-field-full" controlId="pc-tech-estado-fisico">
+                  <Form.Label>Estado físico y fallas previas *</Form.Label>
+                  <Form.Control as="textarea" rows={3} required className={controlClass}
+                    placeholder="Pantalla, carcasa, teclado, rayones, golpes..." value={inspeccion.estadoFisico}
+                    onChange={(e) => setInspeccion((p) => ({ ...p, estadoFisico: e.target.value }))} />
+                </Form.Group>
+              </div>
             </Card.Body>
           </Card>
 
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">2. Servicios de mantenimiento</Card.Header>
-            <Card.Body className="p-4">
+            <Card.Header className="pc-tech-card-head">
+              <span className="pc-tech-number">02</span>
+              <div><strong>Servicios de mantenimiento</strong><small>Selecciona los servicios que corresponden</small></div>
+            </Card.Header>
+            <Card.Body className="pc-tech-card-body">
               <SeleccionServicios servicios={datos.servicios} seleccionados={serviciosElegidos}
                 solicitados={serviciosSolicitados} motivo={motivoServicios}
                 onToggle={cambiarServicio}
@@ -201,57 +225,77 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
           </Card>
 
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">3. Checklist según servicios seleccionados</Card.Header>
-            <Card.Body className="p-4">
+            <Card.Header className="pc-tech-card-head">
+              <span className="pc-tech-number">03</span>
+              <div><strong>Checklist de servicios</strong><small>Responde cada verificación técnica</small></div>
+            </Card.Header>
+            <Card.Body className="pc-tech-card-body">
               {serviciosSeleccionados.map(({ servicio, items }) => (
                 <ChecklistServicio key={servicio.id} servicio={servicio} items={items}
                   respuestas={respuestas} onCambiar={cambiarRespuesta}
                   modoOscuro={modoOscuro} />
               ))}
               {!serviciosSeleccionados.length && (
-                <Alert variant="warning">Selecciona servicios para cargar sus checklists.</Alert>
+                <Alert variant="warning" className="mb-0">Selecciona servicios para cargar sus checklists.</Alert>
               )}
             </Card.Body>
           </Card>
 
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">4. Observaciones técnicas</Card.Header>
-            <Card.Body className="p-4">
+            <Card.Header className="pc-tech-card-head">
+              <span className="pc-tech-number">04</span>
+              <div><strong>Observaciones técnicas</strong><small>Procedimientos, problemas y resultados</small></div>
+            </Card.Header>
+            <Card.Body className="pc-tech-card-body">
               <Form.Control as="textarea" rows={4} maxLength={2000} className={controlClass}
+                aria-label="Observaciones técnicas"
                 placeholder="Procedimientos realizados, problemas encontrados y resultados..."
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)} />
             </Card.Body>
           </Card>
 
-          <div className="d-grid gap-3 mb-5">
+          <div className="pc-tech-submit">
             {mensaje && <Alert variant="warning" role="alert" className="mb-0">{mensaje}</Alert>}
-            <Button type="submit" variant={modoOscuro ? 'light' : 'danger'} size="lg">
+            <Button type="submit" variant="danger" size="lg" className="pc-tech-primary">
               Guardar trabajo técnico
             </Button>
           </div>
         </Form>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
-      <h3 className="fw-bold mb-2" style={{ color: titleColor }}>Bandeja Técnica</h3>
-      <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-        Atenciones activas · {periodoGlobal === 'Todos' ? 'Todos los períodos' : periodoGlobal}
-      </p>
+    <div className={layoutClass}>
+      <div className="pc-tech-heading">
+        <div>
+          <span className="pc-tech-eyebrow">CLÍNICA DEL PC / OPERACIONES</span>
+          <h2>Bandeja técnica</h2>
+          <p>Atenciones activas · {periodoGlobal === 'Todos' ? 'Todos los períodos' : periodoGlobal}</p>
+        </div>
+        <div className="pc-tech-count">
+          <strong>{asignadas.length}</strong>
+          <span>{asignadas.length === 1 ? 'atención activa' : 'atenciones activas'}</span>
+        </div>
+      </div>
+
       {mensaje && <Alert variant="success">{mensaje}</Alert>}
       {rol === 'tecnico' && !usuarioActual && (
         <Alert variant="warning">La sesión no coincide con un técnico registrado en el prototipo.</Alert>
       )}
+
       <Card className={cardClass}>
+        <Card.Header className="pc-tech-card-head">
+          <span className="pc-tech-number">01</span>
+          <div><strong>Atenciones asignadas</strong><small>Selecciona un dispositivo para continuar el trabajo</small></div>
+        </Card.Header>
         <Card.Body className="p-0">
-          <Table responsive hover variant={modoOscuro ? 'dark' : 'light'} className="align-middle mb-0">
+          <Table responsive hover variant={modoOscuro ? 'dark' : 'light'} className="pc-tech-table align-middle mb-0">
             <thead>
               <tr>
-                <th className="px-3 py-3">Dispositivo</th><th>Propietario</th>
-                <th>Técnico</th><th>Estado</th><th className="text-end px-3">Acciones</th>
+                <th>Dispositivo</th><th>Propietario</th>
+                <th>Técnico asignado</th><th>Estado</th><th className="text-end">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -261,20 +305,22 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
                 const trabajando = ['asignado', 'en_proceso'].includes(a.estado);
                 return (
                   <tr key={a.id}>
-                    <td className="px-3">{dispositivo.marca} {dispositivo.modelo}</td>
+                    <td><strong>{dispositivo.marca} {dispositivo.modelo}</strong>
+                      <small className="pc-tech-row-id">{a.id.slice(0, 16)}...</small></td>
                     <td>{propietario.nombre} {propietario.apellidoPaterno}</td>
                     <td>{tecnico?.nombre || 'Sin identificar'}</td>
-                    <td><Badge bg={a.estado === 'asignado' ? 'warning' : 'info'}
-                      text="dark">{etiquetas[a.estado]}</Badge></td>
-                    <td className="text-end px-3">
-                      <div className="d-flex flex-wrap justify-content-end gap-2">
+                    <td><Badge bg={a.estado === 'asignado' ? 'warning' : 'info'} text="dark"
+                      className="pc-tech-status">{etiquetas[a.estado]}</Badge></td>
+                    <td className="text-end">
+                      <div className="pc-tech-row-actions">
                         {trabajando && (
-                          <Button size="sm" variant="outline-secondary" onClick={() => iniciarTrabajo(a)}>
+                          <Button size="sm" variant="outline-secondary" className="pc-tech-secondary"
+                            onClick={() => iniciarTrabajo(a)}>
                             {a.estado === 'asignado' ? 'Atender' : 'Continuar trabajo'}
                           </Button>
                         )}
                         {a.estado !== 'asignado' && (
-                          <Button size="sm" variant="danger"
+                          <Button size="sm" variant="danger" className="pc-tech-primary"
                             onClick={() => { setSeleccion({ id: a.id, modo: 'entrega' }); setMensaje(''); }}>
                             Gestionar entrega
                           </Button>
@@ -285,14 +331,18 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
                 );
               })}
               {asignadas.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-4">
-                  No hay atenciones técnicas activas en este período.
+                <tr><td colSpan={5}>
+                  <div className="pc-tech-empty">
+                    <span className="pc-tech-empty-icon" aria-hidden="true">✓</span>
+                    <strong>No hay atenciones técnicas activas</strong>
+                    <p>No hay dispositivos pendientes de trabajo en el período seleccionado.</p>
+                  </div>
                 </td></tr>
               )}
             </tbody>
           </Table>
         </Card.Body>
       </Card>
-    </>
+    </div>
   );
 }

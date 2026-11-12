@@ -1,8 +1,8 @@
-
 import { Fragment, useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
 import DetalleAtencion from './historial/DetalleAtencion.jsx';
+import './historial/HistorialVisual.css';
 
 const estados = {
   preinscrito: { nombre: 'Preinscrito', color: 'secondary' },
@@ -34,7 +34,7 @@ function EstadoBadge({ valor }) {
   const estado = estados[valor] || { nombre: valor || 'Sin estado', color: 'secondary' };
 
   return (
-    <Badge bg={estado.color}
+    <Badge bg={estado.color} className="hist-status"
       text={['warning', 'info'].includes(estado.color) ? 'dark' : undefined}>
       {estado.nombre}
     </Badge>
@@ -56,6 +56,26 @@ function nombreDispositivo(dispositivo) {
     'Equipo sin identificar';
 }
 
+function IconoBusqueda() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </svg>
+  );
+}
+
+function IconoArchivo() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M8 8h8M8 12h8M8 16h5" />
+    </svg>
+  );
+}
+
 export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos' }) {
   const { datos } = useClinica();
 
@@ -65,10 +85,6 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
   const [fechaFin, setFechaFin] = useState('');
   const [grupoAbiertoId, setGrupoAbiertoId] = useState(null);
   const [seleccionadoId, setSeleccionadoId] = useState(null);
-
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
 
   // Relacionar atenciones con dispositivos, propietarios y jornadas.
   const registros = datos.atenciones.map((atencion) => {
@@ -174,16 +190,22 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
     return nombres.join(', ') || 'No informado';
   };
 
-  // Tabla reutilizable para mostrar visitas del mismo equipo.
+  // Solo identifica técnicos asignados a la atención; no atribuye quién ejecutó cada tarea.
+  const tecnicosDe = (registro) =>
+    (registro?.tecnicoIds || [])
+      .map((id) => datos.usuarios.find((usuario) => usuario.id === id)?.nombre || id)
+      .join(', ') || 'Sin asignar';
+
+  // Las visitas se muestran completas incluso si el usuario filtró un solo período.
   const tablaVisitas = (visitas) => (
-    <Table responsive hover size="sm"
-      variant={modoOscuro ? 'dark' : 'light'}
-      className="align-middle mb-0">
+    <Table responsive hover size="sm" variant={modoOscuro ? 'dark' : 'light'}
+      className="hist-table hist-table--visitas align-middle mb-0">
       <thead>
         <tr>
           <th>Atención</th>
           <th>Jornada</th>
           <th>Período</th>
+          <th>Técnico asignado</th>
           <th>Servicio</th>
           <th>Estado</th>
           <th className="text-end">Acción</th>
@@ -192,18 +214,16 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
       <tbody>
         {visitas.map((visita) => (
           <tr key={visita.id}>
-            <td>
-              <small title={visita.id}>{visita.id.slice(0, 12)}...</small>
-            </td>
+            <td><span className="hist-id" title={visita.id}>{visita.id.slice(0, 12)}...</span></td>
             <td>{visita.jornada?.fecha || 'Sin fecha'}</td>
             <td>{visita.jornada?.periodo || 'Sin período'}</td>
+            <td>{tecnicosDe(visita)}</td>
             <td>{serviciosDe(visita)}</td>
             <td><EstadoBadge valor={visita.estado} /></td>
             <td className="text-end">
-              <Button size="sm"
-                variant={seleccionadoId === visita.id ? 'danger' : 'outline-danger'}
-                onClick={() => setSeleccionadoId(visita.id)}>
-                Ver ficha
+              <Button size="sm" className={`hist-btn ${seleccionadoId === visita.id ? 'hist-btn--red' : 'hist-btn--outline'}`}
+                variant="link" onClick={() => setSeleccionadoId(visita.id)}>
+                Ver ficha <span aria-hidden="true">↗</span>
               </Button>
             </td>
           </tr>
@@ -213,242 +233,232 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
   );
 
   return (
-    <>
-      <div className="mb-4">
-        <h3 className="fw-bold" style={{ color: titleColor }}>
-          Historial y Consultas
-        </h3>
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-          Consulta dispositivos, atenciones anteriores y seguimiento de visitas.
-        </p>
-      </div>
+    <div className={`hc ${modoOscuro ? 'hc--dark' : 'hc--light'}`}>
+      <header className="hist-page-header">
+        <div>
+          <p className="hist-eyebrow">CLÍNICA DEL PC / CONSULTAS</p>
+          <h1>Historial y consultas</h1>
+          <p className="hist-subtitle">Consulta dispositivos, atenciones anteriores y seguimiento de visitas.</p>
+        </div>
+        <div className="hist-period-tag">
+          <span>Período académico</span>
+          <strong>{periodoGlobal === 'Todos' ? 'Todos los períodos' : periodoGlobal}</strong>
+        </div>
+      </header>
 
       {seleccionado ? (
         <>
-          <Card className={cardClass}>
-            <Card.Header className="d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-              <strong>Historial del dispositivo</strong>
-              <Button variant="outline-secondary" size="sm"
+          <Card className="hist-card hist-card--history">
+            <Card.Header className="hist-card__header hist-card__header--between">
+              <div>
+                <p className="hist-eyebrow">HISTORIAL COMPLETO</p>
+                <h2>Historial del dispositivo</h2>
+              </div>
+              <Button variant="link" className="hist-btn hist-btn--outline"
                 onClick={() => setSeleccionadoId(null)}>
-                Volver a resultados
+                ← Volver a resultados
               </Button>
             </Card.Header>
-
-            <Card.Body className="p-4">
-              <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+            <Card.Body className="hist-card__body">
+              <div className="hist-device-summary">
                 <div>
-                  <h5 className="fw-bold mb-1">
-                    {nombreDispositivo(seleccionado.dispositivo)}
-                  </h5>
-                  <p className="mb-1">{nombrePropietario(seleccionado.propietario)}</p>
-                  <small className={modoOscuro ? 'text-light' : 'text-muted'}>
-                    ID del dispositivo: {seleccionado.dispositivo?.id || 'No disponible'}
-                  </small>
+                  <p className="hist-label">EQUIPO REGISTRADO</p>
+                  <h3>{nombreDispositivo(seleccionado.dispositivo)}</h3>
+                  <p>{nombrePropietario(seleccionado.propietario)}</p>
+                  <span className="hist-id">ID del dispositivo: {seleccionado.dispositivo?.id || 'No disponible'}</span>
                 </div>
-
-                <Badge bg="primary" className="px-3 py-2">
-                  {visitasSeleccionado.length} atenciones históricas
-                </Badge>
+                <span className="hist-count-pill">
+                  {visitasSeleccionado.length} {visitasSeleccionado.length === 1 ? 'atención histórica' : 'atenciones históricas'}
+                </span>
               </div>
-
-              <Alert variant="info" className="small">
-                Este historial incluye todas las visitas asociadas al dispositivo,
-                incluso cuando corresponden a otros períodos académicos.
+              <Alert variant="info" className="hist-note mb-3">
+                Se incluyen todas las visitas de este dispositivo, aunque correspondan a otros períodos académicos.
               </Alert>
-
-              {tablaVisitas(visitasSeleccionado)}
+              <div className="hist-table-area">{tablaVisitas(visitasSeleccionado)}</div>
             </Card.Body>
           </Card>
 
-          <DetalleAtencion
-            registro={seleccionado}
-            datos={datos}
-            modoOscuro={modoOscuro}
-            onVolver={() => setSeleccionadoId(null)}
-          />
+          <DetalleAtencion registro={seleccionado} datos={datos}
+            modoOscuro={modoOscuro} onVolver={() => setSeleccionadoId(null)} />
         </>
       ) : (
         <>
-          <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">
-              Buscar y filtrar dispositivos
+          <Card className="hist-card hist-card--filters">
+            <Card.Header className="hist-card__header">
+              <span className="hist-head-symbol"><IconoBusqueda /></span>
+              <div>
+                <h2>Buscar y filtrar dispositivos</h2>
+                <p>Encuentra un equipo por propietario, RUT, serie o número de atención.</p>
+              </div>
             </Card.Header>
-
-            <Card.Body className="p-4">
+            <Card.Body className="hist-card__body">
               <Row className="g-3">
                 <Col lg={6}>
-                  <Form.Label className="fw-bold">Buscar registro</Form.Label>
-                  <Form.Control value={busqueda} className={controlClass}
-                    placeholder="RUT, propietario, dispositivo, serie o atención"
-                    onChange={(e) => setBusqueda(e.target.value)} />
+                  <Form.Group controlId="hist-busqueda">
+                    <Form.Label>Buscar registro</Form.Label>
+                    <Form.Control value={busqueda} className="hist-control"
+                      placeholder="RUT, propietario, equipo, serie o atención"
+                      onChange={(e) => setBusqueda(e.target.value)} />
+                  </Form.Group>
                 </Col>
-
                 <Col lg={3}>
-                  <Form.Label className="fw-bold">Estado</Form.Label>
-                  <Form.Select value={estadoFiltro} className={controlClass}
-                    onChange={(e) => setEstadoFiltro(e.target.value)}>
-                    <option value="Todos">Todos los estados</option>
-                    {Object.entries(estados).map(([clave, estado]) => (
-                      <option key={clave} value={clave}>{estado.nombre}</option>
-                    ))}
-                  </Form.Select>
+                  <Form.Group controlId="hist-estado">
+                    <Form.Label>Estado de la atención</Form.Label>
+                    <Form.Select value={estadoFiltro} className="hist-control"
+                      onChange={(e) => setEstadoFiltro(e.target.value)}>
+                      <option value="Todos">Todos los estados</option>
+                      {Object.entries(estados).map(([clave, estado]) => (
+                        <option key={clave} value={clave}>{estado.nombre}</option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
                 </Col>
-
                 <Col lg={3}>
-                  <Form.Label className="fw-bold">Período</Form.Label>
-                  <Form.Control value={periodoGlobal === 'Todos'
-                    ? 'Todos los períodos' : periodoGlobal}
-                    readOnly className={controlClass} />
+                  <Form.Group controlId="hist-periodo">
+                    <Form.Label>Período</Form.Label>
+                    <Form.Control value={periodoGlobal === 'Todos' ? 'Todos los períodos' : periodoGlobal}
+                      readOnly className="hist-control hist-control--readonly" />
+                  </Form.Group>
                 </Col>
-
                 <Col md={4}>
-                  <Form.Label className="fw-bold">Jornada desde</Form.Label>
-                  <Form.Control type="date" value={fechaInicio}
-                    max={fechaFin || undefined} className={controlClass}
-                    onChange={(e) => setFechaInicio(e.target.value)} />
+                  <Form.Group controlId="hist-inicio">
+                    <Form.Label>Jornada desde</Form.Label>
+                    <Form.Control type="date" value={fechaInicio} className="hist-control"
+                      max={fechaFin || undefined}
+                      onChange={(e) => setFechaInicio(e.target.value)} />
+                  </Form.Group>
                 </Col>
-
                 <Col md={4}>
-                  <Form.Label className="fw-bold">Jornada hasta</Form.Label>
-                  <Form.Control type="date" value={fechaFin}
-                    min={fechaInicio || undefined} className={controlClass}
-                    onChange={(e) => setFechaFin(e.target.value)} />
+                  <Form.Group controlId="hist-fin">
+                    <Form.Label>Jornada hasta</Form.Label>
+                    <Form.Control type="date" value={fechaFin} className="hist-control"
+                      min={fechaInicio || undefined}
+                      onChange={(e) => setFechaFin(e.target.value)} />
+                  </Form.Group>
                 </Col>
-
                 <Col md={4} className="d-flex align-items-end">
-                  <Button variant="outline-secondary" className="w-100"
-                    onClick={limpiarFiltros}>
-                    Limpiar filtros
-                  </Button>
+                  <Button variant="link" className="hist-btn hist-btn--outline hist-btn--full"
+                    onClick={limpiarFiltros}>Limpiar filtros</Button>
                 </Col>
               </Row>
             </Card.Body>
           </Card>
 
-          <div className="d-flex flex-wrap gap-3 mb-4">
-            <Badge bg="secondary" className="px-3 py-2">
-              Dispositivos: {grupos.length}
-            </Badge>
-            <Badge bg="info" text="dark" className="px-3 py-2">
-              Atenciones filtradas: {filtrados.length}
-            </Badge>
-            <Badge bg="success" className="px-3 py-2">
-              Entregados: {entregados}
-            </Badge>
-            <Badge bg="primary" className="px-3 py-2">
-              Activos: {activos}
-            </Badge>
-          </div>
+          <section className="hist-stats" aria-label="Indicadores del historial filtrado">
+            <div className="hist-stat hist-stat--devices">
+              <span>Dispositivos</span><strong>{grupos.length}</strong><small>Equipos encontrados</small>
+            </div>
+            <div className="hist-stat hist-stat--visits">
+              <span>Atenciones filtradas</span><strong>{filtrados.length}</strong><small>Coinciden con los filtros</small>
+            </div>
+            <div className="hist-stat hist-stat--delivered">
+              <span>Entregados</span><strong>{entregados}</strong><small>Atenciones finalizadas</small>
+            </div>
+            <div className="hist-stat hist-stat--active">
+              <span>Activos</span><strong>{activos}</strong><small>Atenciones abiertas</small>
+            </div>
+          </section>
 
-          <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">
-              Dispositivos y visitas registradas
+          <Card className="hist-card hist-card--list">
+            <Card.Header className="hist-card__header hist-card__header--between">
+              <div>
+                <p className="hist-eyebrow">REGISTROS</p>
+                <h2>Dispositivos y visitas registradas</h2>
+              </div>
+              <span className="hist-count-pill">{grupos.length} {grupos.length === 1 ? 'dispositivo' : 'dispositivos'}</span>
             </Card.Header>
+            <Card.Body className="hist-card__body hist-card__body--flush">
+              {grupos.length > 0 ? (
+                <div className="hist-table-area">
+                  <Table responsive hover variant={modoOscuro ? 'dark' : 'light'}
+                    className="hist-table align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Propietario</th>
+                        <th>Dispositivo</th>
+                        <th>Serie</th>
+                        <th>Visitas totales</th>
+                        <th>Última jornada</th>
+                        <th>Técnico asignado</th>
+                        <th>Último estado</th>
+                        <th className="text-end">Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grupos.map((grupo) => {
+                        const ultima = grupo.visitas[0];
+                        const abierto = grupoAbiertoId === grupo.id;
 
-            <Card.Body className="p-0">
-              <Table responsive hover variant={modoOscuro ? 'dark' : 'light'}
-                className="align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th className="px-3 py-3">Propietario</th>
-                    <th>Dispositivo</th>
-                    <th>Serie</th>
-                    <th>Visitas totales</th>
-                    <th>Última jornada</th>
-                    <th>Último estado</th>
-                    <th className="text-end px-3">Acción</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {grupos.map((grupo) => {
-                    const ultima = grupo.visitas[0];
-                    const abierto = grupoAbiertoId === grupo.id;
-
-                    return (
-                      <Fragment key={grupo.id}>
-                        <tr>
-                          <td className="px-3">
-                            <strong>{nombrePropietario(grupo.propietario)}</strong>
-                            <div className="small text-muted">
-                              {grupo.propietario?.rut || ''}
-                            </div>
-                          </td>
-
-                          <td>
-                            <strong>{nombreDispositivo(grupo.dispositivo)}</strong>
-                            <div className="small text-muted"
-                              title={grupo.dispositivo?.id}>
-                              {grupo.dispositivo?.id?.slice(0, 18) || 'Sin ID'}
-                            </div>
-                          </td>
-
-                          <td>{grupo.dispositivo?.numeroSerie || 'No informada'}</td>
-
-                          <td>
-                            <Badge bg={grupo.visitas.length > 1 ? 'info' : 'secondary'}
-                              text={grupo.visitas.length > 1 ? 'dark' : undefined}>
-                              {grupo.visitas.length} visitas
-                            </Badge>
-                          </td>
-
-                          <td>{ultima?.jornada?.fecha || 'Sin fecha'}</td>
-                          <td><EstadoBadge valor={ultima?.estado} /></td>
-
-                          <td className="text-end px-3">
-                            <Button size="sm" variant="outline-danger"
-                              aria-expanded={abierto}
-                              onClick={() => setGrupoAbiertoId(
-                                abierto ? null : grupo.id
-                              )}>
-                              {abierto ? 'Ocultar visitas' : 'Ver visitas'}
-                            </Button>
-                          </td>
-                        </tr>
-
-                        {abierto && (
-                          <tr>
-                            <td colSpan={7} className="p-3 p-md-4">
-                              <div className={`rounded-3 border p-3 ${
-                                modoOscuro ? 'bg-dark' : 'bg-light'
-                              }`}>
-                                <div className="d-flex flex-wrap justify-content-between gap-2 mb-3">
-                                  <strong>
-                                    Historial completo — {nombreDispositivo(grupo.dispositivo)}
-                                  </strong>
-                                  <small>
-                                    {grupo.coincidencias.length} coincidencias con los filtros
-                                  </small>
-                                </div>
-
-                                {tablaVisitas(grupo.visitas)}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </Fragment>
-                    );
-                  })}
-
-                  {grupos.length === 0 && (
-                    <tr>
-                      <td colSpan={7} className="text-center py-4">
-                        No se encontraron dispositivos con los filtros seleccionados.
-                      </td>
-                    </tr>
+                        return (
+                          <Fragment key={grupo.id}>
+                            <tr>
+                              <td>
+                                <strong className="hist-cell-title">{nombrePropietario(grupo.propietario)}</strong>
+                                <span className="hist-cell-subtitle">{grupo.propietario?.rut || ''}</span>
+                              </td>
+                              <td>
+                                <strong className="hist-cell-title">{nombreDispositivo(grupo.dispositivo)}</strong>
+                                <span className="hist-cell-subtitle" title={grupo.dispositivo?.id}>
+                                  {grupo.dispositivo?.id?.slice(0, 18) || 'Sin ID'}
+                                </span>
+                              </td>
+                              <td>{grupo.dispositivo?.numeroSerie || 'No informada'}</td>
+                              <td><span className="hist-count-pill hist-count-pill--small">
+                                {grupo.visitas.length} {grupo.visitas.length === 1 ? 'visita' : 'visitas'}
+                              </span></td>
+                              <td>{ultima?.jornada?.fecha || 'Sin fecha'}</td>
+                              <td>{tecnicosDe(ultima)}</td>
+                              <td><EstadoBadge valor={ultima?.estado} /></td>
+                              <td className="text-end">
+                                <Button size="sm" variant="link" className="hist-btn hist-btn--outline"
+                                  aria-expanded={abierto}
+                                  aria-label={`${abierto ? 'Ocultar' : 'Ver'} visitas de ${nombreDispositivo(grupo.dispositivo)}`}
+                                  onClick={() => setGrupoAbiertoId(abierto ? null : grupo.id)}>
+                                  {abierto ? 'Ocultar visitas' : 'Ver visitas'}
+                                  <span aria-hidden="true">{abierto ? '⌃' : '⌄'}</span>
+                                </Button>
+                              </td>
+                            </tr>
+                            {abierto && (
+                              <tr className="hist-expanded-row">
+                                <td colSpan={8}>
+                                  <div className="hist-expanded">
+                                    <div className="hist-expanded__heading">
+                                      <strong>Historial completo · {nombreDispositivo(grupo.dispositivo)}</strong>
+                                      <span>{grupo.coincidencias.length} {grupo.coincidencias.length === 1 ? 'coincidencia' : 'coincidencias'} con los filtros</span>
+                                    </div>
+                                    {tablaVisitas(grupo.visitas)}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="hist-empty">
+                  <span className="hist-empty__icon"><IconoArchivo /></span>
+                  <h3>{registros.length === 0 ? 'Todavía no hay atenciones registradas' : 'No encontramos dispositivos'}</h3>
+                  <p>{registros.length === 0
+                    ? 'Las atenciones aparecerán aquí cuando se registren en el sistema.'
+                    : 'Prueba con otro RUT, estado, período o rango de fechas.'}</p>
+                  {registros.length > 0 && (
+                    <Button variant="link" className="hist-btn hist-btn--outline"
+                      onClick={limpiarFiltros}>Restablecer filtros</Button>
                   )}
-                </tbody>
-              </Table>
+                </div>
+              )}
             </Card.Body>
           </Card>
 
           {registros.length === 0 && (
-            <Alert variant="info">
-              Todavía no existen atenciones registradas.
-            </Alert>
+            <Alert variant="info" className="hist-note">Todavía no existen atenciones registradas.</Alert>
           )}
         </>
       )}
-    </>
+    </div>
   );
 }

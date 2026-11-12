@@ -1,65 +1,166 @@
-
 import logoInacap from '../../assets/logo-inacap.png';
+import logoBlanco60 from '../../assets/logo-inacap-60-blanco.png';
+import './Layout.css';
+
+const nombresRol = {
+  superusuario: 'Administración',
+  recepcionista: 'Recepción',
+  tecnico: 'Equipo técnico',
+};
+
+function obtenerIniciales(nombre) {
+  return (
+    String(nombre || 'Usuario')
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((parte) => parte.charAt(0).toUpperCase())
+      .join('') || 'U'
+  );
+}
+
+function IconoMenu({ tipo }) {
+  return (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {tipo === 'inicio' && (
+        <>
+          <path d="m3 10 9-7 9 7" />
+          <path d="M5 9v12h14V9M9 21v-7h6v7" />
+        </>
+      )}
+      {tipo === 'recepcion' && (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 15h8" />
+        </>
+      )}
+      {tipo === 'registroPresencial' && (
+        <>
+          <circle cx="9" cy="7" r="4" />
+          <path d="M2 21v-2a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v2M19 8v6M16 11h6" />
+        </>
+      )}
+      {tipo === 'tecnico' && (
+        <path d="M14.7 6.3a4 4 0 0 0-5 5L3.5 17.5a2.1 2.1 0 0 0 3 3l6.2-6.2a4 4 0 0 0 5-5l-2.8 2.8-3-3z" />
+      )}
+      {tipo === 'historial' && (
+        <>
+          <path d="M3 12a9 9 0 1 0 3-6.7L3 8" />
+          <path d="M3 3v5h5M12 7v5l3 2" />
+        </>
+      )}
+      {tipo === 'parametros' && (
+        <>
+          <path d="M4 7h16M4 17h16M9 4v6M15 14v6" />
+          <circle cx="9" cy="7" r="2" fill="currentColor" stroke="none" />
+          <circle cx="15" cy="17" r="2" fill="currentColor" stroke="none" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 function EnlaceMenu({ id, texto, vistaActiva, onSeleccionar }) {
   const activo = vistaActiva === id;
-
   return (
-    <button type="button" onClick={() => onSeleccionar(id)}
+    <button
+      type="button"
+      onClick={() => onSeleccionar(id)}
       aria-current={activo ? 'page' : undefined}
-      className={`block w-full cursor-pointer appearance-none rounded-lg border-0
-        px-4 py-2.5 text-left text-sm text-white transition-colors duration-200
-        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white
-        ${activo ? 'bg-inacap-red font-semibold'
-          : 'bg-transparent hover:bg-inacap-red/90 hover:text-white'}`}>
-      {texto}
+      className={`pc-sidebar__item${activo ? ' pc-sidebar__item--active' : ''}`}
+    >
+      <span className="pc-sidebar__icon"><IconoMenu tipo={id} /></span>
+      <span className="pc-sidebar__item-text">{texto}</span>
+      <svg
+        className="pc-sidebar__arrow"
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m9 18 6-6-6-6" />
+      </svg>
     </button>
   );
 }
 
-export default function Sidebar({
-  nombreUsuario, vistaActiva, permisos, onSeleccionar,
-}) {
+function TituloSeccion({ children }) {
+  return <p className="pc-sidebar__section-title">{children}</p>;
+}
+
+export default function Sidebar({ nombreUsuario, rolUsuario, vistaActiva, permisos, onSeleccionar, modoOscuro = false }) {
   const enlace = (id, texto) => (
-    <EnlaceMenu key={id} id={id} texto={texto}
-      vistaActiva={vistaActiva} onSeleccionar={onSeleccionar} />
+    <EnlaceMenu
+      key={id}
+      id={id}
+      texto={texto}
+      vistaActiva={vistaActiva}
+      onSeleccionar={onSeleccionar}
+    />
   );
 
+  const hayFases =
+    permisos.recepcion || permisos.registroPresencial || permisos.tecnico || permisos.historial;
+
   return (
-    <div className="flex min-h-full flex-col bg-[#333333] text-white">
-      <div className="border-b-4 border-inacap-red bg-white px-5 py-6 text-center">
-        <img src={logoInacap} alt="INACAP"
-          className="mx-auto h-auto w-full max-w-[170px] object-contain" />
-        <p className="mt-3 mb-0 text-sm font-semibold text-inacap-red">
-          {nombreUsuario}
-        </p>
+    <div className={`pc-sidebar ${modoOscuro ? 'pc-sidebar--dark' : 'pc-sidebar--light'}`}>
+      <div className={`pc-sidebar__brand${modoOscuro ? ' pc-sidebar__brand--dark' : ''}`}>
+        <img
+          src={modoOscuro ? logoBlanco60 : logoInacap}
+          alt={modoOscuro ? 'INACAP 60 años' : 'INACAP'}
+          className="pc-sidebar__logo"
+        />
+        <span className="pc-sidebar__brand-detail">Clínica del PC</span>
       </div>
 
-      <nav aria-label="Módulos del sistema" className="flex flex-col gap-1 p-3">
-        {permisos.inicio && enlace('inicio', 'Inicio')}
+      <div className="pc-sidebar__user">
+        <span className="pc-sidebar__avatar">{obtenerIniciales(nombreUsuario)}</span>
+        <div className="pc-sidebar__user-text">
+          <strong title={nombreUsuario}>{nombreUsuario || 'Usuario'}</strong>
+          <small>{nombresRol[rolUsuario] || 'Personal autorizado'}</small>
+        </div>
+      </div>
 
-        <p className="mb-1 mt-5 px-3 text-xs font-semibold uppercase tracking-wider text-gray-300">
-          Fases del servicio
-        </p>
-
-        {permisos.recepcion && enlace('recepcion', '1. Recepción de Equipos')}
-
-        {permisos.registroPresencial &&
-          enlace('registroPresencial', '2. Registrar sin QR')}
-
-        {permisos.tecnico && enlace('tecnico', '3. Panel Técnico')}
-
-        {permisos.historial && enlace('historial', '4. Historial y Consultas')}
-
+      <nav aria-label="Módulos del sistema" className="pc-sidebar__nav">
+        {permisos.inicio && (
+          <section className="pc-sidebar__section" aria-label="General">
+            <TituloSeccion>General</TituloSeccion>
+            {enlace('inicio', 'Inicio')}
+          </section>
+        )}
+        {hayFases && (
+          <section className="pc-sidebar__section" aria-label="Fases del servicio">
+            <TituloSeccion>Fases del servicio</TituloSeccion>
+            {permisos.recepcion && enlace('recepcion', 'Recepción de equipos')}
+            {permisos.registroPresencial && enlace('registroPresencial', 'Registro presencial')}
+            {permisos.tecnico && enlace('tecnico', 'Panel técnico')}
+            {permisos.historial && enlace('historial', 'Historial y consultas')}
+          </section>
+        )}
         {permisos.parametros && (
-          <>
-            <p className="mb-1 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-gray-300">
-              Administración
-            </p>
-            {enlace('parametros', 'Parámetros y Mantenedores')}
-          </>
+          <section className="pc-sidebar__section" aria-label="Administración">
+            <TituloSeccion>Administración</TituloSeccion>
+            {enlace('parametros', 'Parámetros y mantenedores')}
+          </section>
         )}
       </nav>
+
+      <div className="pc-sidebar__footer">Prototipo académico · INACAP</div>
     </div>
   );
 }

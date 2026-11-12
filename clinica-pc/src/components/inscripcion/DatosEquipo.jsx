@@ -184,6 +184,7 @@ export default function DatosEquipo({
   formData,
   onChange,
   modoOscuro,
+  numeroPaso = '02',
 }) {
   return (
     <section
@@ -197,7 +198,7 @@ export default function DatosEquipo({
     >
       <div className="flex items-center gap-4 border-b border-gray-500/20 px-6 py-5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-inacap-red text-sm font-bold text-white">
-          02
+          {numeroPaso}
         </span>
 
         <div>

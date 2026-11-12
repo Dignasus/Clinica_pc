@@ -4,7 +4,7 @@ import { Card, Form, Button, Alert } from 'react-bootstrap';
 import { useClinica } from '../../context/clinicaContextBase.js';
 
 export default function EntregaEquipo({
-  atencion, dispositivo, propietario, modoOscuro, onVolver, onEntregada,
+  atencion, dispositivo, propietario, onVolver, onEntregada,
 }) {
   const { dispatch } = useClinica();
   const [mensaje, setMensaje] = useState('');
@@ -20,9 +20,9 @@ export default function EntregaEquipo({
     pruebaConPropietario: false, observaciones: '',
   });
 
-  const controlClass = modoOscuro ? 'bg-dark text-light' : '';
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const botonVariante = modoOscuro ? 'light' : 'danger';
+  const controlClass = 'pc-tech-control';
+  const cardClass = 'pc-tech-card';
+  const botonVariante = 'danger';
   const inicial = atencion.inspeccionInicial || {};
 
   const actualizar = (setter, campo, valor) => {
@@ -81,15 +81,29 @@ export default function EntregaEquipo({
   };
 
   return (
-    <>
-      <div className="d-flex justify-content-between align-items-start gap-3 mb-4">
+    <div className="pc-tech-delivery">
+      <div className="pc-tech-heading">
         <div>
-          <h3 className="fw-bold text-danger mb-1">Verificación y Entrega</h3>
-          <p className={modoOscuro ? 'text-light mb-0' : 'text-muted mb-0'}>
-            {dispositivo.marca} {dispositivo.modelo} · {propietario.nombre} {propietario.apellidoPaterno}
-          </p>
+          <span className="pc-tech-eyebrow">CLÍNICA DEL PC / CIERRE DE ATENCIÓN</span>
+          <h2>Verificación y entrega</h2>
+          <p>{dispositivo.marca} {dispositivo.modelo} · {propietario.nombre} {propietario.apellidoPaterno}</p>
         </div>
-        <Button variant="secondary" onClick={onVolver}>Volver</Button>
+        <Button type="button" variant="outline-secondary" className="pc-tech-back" onClick={onVolver}>
+          Volver a la bandeja
+        </Button>
+      </div>
+
+      <div className="pc-tech-progress" aria-label="Etapas de la entrega">
+        <div className={atencion.estado === 'en_proceso' ? 'is-current' : 'is-done'}>
+          <span>01</span><strong>Verificación</strong>
+        </div>
+        <div className={atencion.estado === 'listo_entrega' ? 'is-current' :
+          atencion.estado === 'contactado' ? 'is-done' : ''}>
+          <span>02</span><strong>Aviso</strong>
+        </div>
+        <div className={atencion.estado === 'contactado' ? 'is-current' : ''}>
+          <span>03</span><strong>Entrega</strong>
+        </div>
       </div>
 
       {mensaje && <Alert variant="info">{mensaje}</Alert>}
@@ -98,8 +112,10 @@ export default function EntregaEquipo({
       {atencion.estado === 'en_proceso' && (
         <Form onSubmit={guardarVerificacion}>
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">1. Verificación final del dispositivo</Card.Header>
-            <Card.Body className="p-4">
+            <Card.Header className="pc-tech-card-head"><span className="pc-tech-number">01</span>
+                <div><strong>Verificación final del dispositivo</strong><small>Comparación con el estado inicial</small></div>
+              </Card.Header>
+            <Card.Body className="pc-tech-card-body">
               <Alert variant="secondary">
                 <strong>Inspección inicial registrada</strong>
                 <p className="mb-1 mt-2">Encendido: {inicial.encendido || 'No registrado'}</p>
@@ -108,7 +124,7 @@ export default function EntregaEquipo({
               </Alert>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Funcionamiento al finalizar *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Funcionamiento al finalizar *</Form.Label>
                 <Form.Select required className={controlClass} value={verificacion.encendido}
                   onChange={(e) => actualizar(setVerificacion, 'encendido', e.target.value)}>
                   <option value="">Seleccione...</option>
@@ -119,7 +135,7 @@ export default function EntregaEquipo({
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Estado físico final *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Estado físico final *</Form.Label>
                 <Form.Control as="textarea" rows={2} required className={controlClass}
                   placeholder="Describe pantalla, teclado, carcasa y otros componentes..."
                   value={verificacion.estadoFisico}
@@ -127,14 +143,14 @@ export default function EntregaEquipo({
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Accesorios que se devolverán *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Accesorios que se devolverán *</Form.Label>
                 <Form.Control required className={controlClass} value={verificacion.accesorios}
                   placeholder="Ej: Cargador y funda; o Ninguno"
                   onChange={(e) => actualizar(setVerificacion, 'accesorios', e.target.value)} />
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Diferencias respecto al estado inicial *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Diferencias respecto al estado inicial *</Form.Label>
                 <Form.Control as="textarea" rows={2} required className={controlClass}
                   placeholder="Describe las diferencias o escribe: Sin diferencias"
                   value={verificacion.diferencias}
@@ -142,7 +158,7 @@ export default function EntregaEquipo({
               </Form.Group>
 
               <Form.Group className="mb-4">
-                <Form.Label className="fw-bold">Resultado del servicio *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Resultado del servicio *</Form.Label>
                 <Form.Select required className={controlClass} value={verificacion.resultadoServicio}
                   onChange={(e) => actualizar(setVerificacion, 'resultadoServicio', e.target.value)}>
                   <option value="">Seleccione...</option>
@@ -152,7 +168,7 @@ export default function EntregaEquipo({
                 </Form.Select>
               </Form.Group>
 
-              <Button type="submit" variant={botonVariante} className="fw-bold">
+              <Button type="submit" variant={botonVariante} className="pc-tech-primary">
                 Guardar verificación final
               </Button>
             </Card.Body>
@@ -164,14 +180,16 @@ export default function EntregaEquipo({
       {atencion.estado === 'listo_entrega' && (
         <Form onSubmit={guardarContacto}>
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">2. Aviso al propietario</Card.Header>
-            <Card.Body className="p-4">
+            <Card.Header className="pc-tech-card-head"><span className="pc-tech-number">02</span>
+                <div><strong>Aviso al propietario</strong><small>Registro del contacto realizado</small></div>
+              </Card.Header>
+            <Card.Body className="pc-tech-card-body">
               <Alert variant="success">
                 El dispositivo está listo para coordinar su devolución.
               </Alert>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Medio de contacto utilizado *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Medio de contacto utilizado *</Form.Label>
                 <Form.Select required className={controlClass} value={contacto.medio}
                   onChange={(e) => actualizar(setContacto, 'medio', e.target.value)}>
                   <option value="">Seleccione...</option>
@@ -183,7 +201,7 @@ export default function EntregaEquipo({
               </Form.Group>
 
               <Form.Group className="mb-4">
-                <Form.Label className="fw-bold">Resultado del contacto *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Resultado del contacto *</Form.Label>
                 <Form.Control as="textarea" rows={3} required className={controlClass}
                   placeholder="Ej: Propietario informado, acordó retirar el equipo..."
                   value={contacto.observaciones}
@@ -195,7 +213,7 @@ export default function EntregaEquipo({
                 No envía WhatsApp, correos ni llamadas automáticamente.
               </Alert>
 
-              <Button type="submit" variant={botonVariante} className="fw-bold">
+              <Button type="submit" variant={botonVariante} className="pc-tech-primary">
                 Registrar aviso realizado
               </Button>
             </Card.Body>
@@ -207,15 +225,17 @@ export default function EntregaEquipo({
       {atencion.estado === 'contactado' && (
         <Form onSubmit={confirmarEntrega}>
           <Card className={cardClass}>
-            <Card.Header className="fw-bold py-3">3. Entrega y cierre de atención</Card.Header>
-            <Card.Body className="p-4">
+            <Card.Header className="pc-tech-card-head"><span className="pc-tech-number">03</span>
+                <div><strong>Entrega y cierre de atención</strong><small>Confirmación conjunta con el propietario</small></div>
+              </Card.Header>
+            <Card.Body className="pc-tech-card-body">
               <Alert variant="info">
                 El contacto está registrado. Verifica el dispositivo junto al
                 propietario antes de cerrar esta atención.
               </Alert>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Nombre de quien recibe *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Nombre de quien recibe *</Form.Label>
                 <Form.Control required className={controlClass}
                   placeholder="Persona que recibe el equipo"
                   value={entrega.recibidoPor}
@@ -223,7 +243,7 @@ export default function EntregaEquipo({
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Conformidad de la entrega *</Form.Label>
+                <Form.Label className="pc-tech-field-label">Conformidad de la entrega *</Form.Label>
                 <Form.Select required className={controlClass} value={entrega.conformidad}
                   onChange={(e) => actualizar(setEntrega, 'conformidad', e.target.value)}>
                   <option value="">Seleccione...</option>
@@ -234,7 +254,7 @@ export default function EntregaEquipo({
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label className="fw-bold">Observaciones de la entrega</Form.Label>
+                <Form.Label className="pc-tech-field-label">Observaciones de la entrega</Form.Label>
                 <Form.Control as="textarea" rows={3} className={controlClass}
                   placeholder="Dudas, observaciones del propietario o escribe Sin observaciones"
                   value={entrega.observaciones}
@@ -246,13 +266,13 @@ export default function EntregaEquipo({
                 label="Confirmo que el dispositivo fue probado junto al propietario."
                 onChange={(e) => actualizar(setEntrega, 'pruebaConPropietario', e.target.checked)} />
 
-              <Button type="submit" variant={botonVariante} size="lg" className="fw-bold">
+              <Button type="submit" variant={botonVariante} size="lg" className="pc-tech-primary">
                 Confirmar entrega y cerrar atención
               </Button>
             </Card.Body>
           </Card>
         </Form>
       )}
-    </>
+    </div>
   );
 }

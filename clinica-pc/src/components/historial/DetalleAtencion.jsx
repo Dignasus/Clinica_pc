@@ -1,4 +1,3 @@
-
 import { Alert, Badge, Button, Card, Col, Row, Table } from 'react-bootstrap';
 
 const estados = {
@@ -35,12 +34,10 @@ const fechaJornada = (valor) => {
 };
 
 function Estado({ valor }) {
-  const estado = estados[valor] || {
-    nombre: valor || 'Sin estado', color: 'secondary',
-  };
+  const estado = estados[valor] || { nombre: valor || 'Sin estado', color: 'secondary' };
 
   return (
-    <Badge bg={estado.color}
+    <Badge bg={estado.color} className="hist-status"
       text={['warning', 'info'].includes(estado.color) ? 'dark' : undefined}>
       {estado.nombre}
     </Badge>
@@ -49,15 +46,29 @@ function Estado({ valor }) {
 
 function Campo({ nombre, valor }) {
   return (
-    <p className="mb-2">
-      <strong>{nombre}:</strong> {mostrar(valor)}
-    </p>
+    <div className="hist-field">
+      <span className="hist-field__name">{nombre}</span>
+      <span className="hist-field__value">{mostrar(valor)}</span>
+    </div>
   );
 }
 
-export default function DetalleAtencion({
-  registro, datos, modoOscuro, onVolver,
-}) {
+function Seccion({ numero, titulo, subtitulo, children }) {
+  return (
+    <Card as="section" className="hist-card hist-detail-section">
+      <Card.Header className="hist-card__header">
+        <span className="hist-step">{String(numero).padStart(2, '0')}</span>
+        <div>
+          <h2>{titulo}</h2>
+          {subtitulo && <p>{subtitulo}</p>}
+        </div>
+      </Card.Header>
+      <Card.Body className="hist-card__body">{children}</Card.Body>
+    </Card>
+  );
+}
+
+export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver }) {
   const dispositivo = registro.dispositivo || {};
   const propietario = registro.propietario || {};
   const jornada = registro.jornada || {};
@@ -69,14 +80,6 @@ export default function DetalleAtencion({
 
   const checklist = Array.isArray(registro.respuestasChecklist)
     ? registro.respuestasChecklist : [];
-
-  const cardClass = `shadow-sm border-0 mb-4 ${
-    modoOscuro ? 'bg-dark text-light' : ''
-  }`;
-
-  const headerClass = `fw-bold py-3 ${
-    modoOscuro ? 'bg-secondary text-light' : 'bg-white'
-  }`;
 
   const servicioNombre = (id) =>
     datos.servicios.find((s) => s.id === id)?.nombre || id;
@@ -107,334 +110,245 @@ export default function DetalleAtencion({
       (b.fechaPreinscripcion || '').localeCompare(a.fechaPreinscripcion || '')
     );
 
-  const otrasAtenciones = atencionesEquipo.filter(
-    (a) => a.id !== registro.id
-  );
-
+  const otrasAtenciones = atencionesEquipo.filter((a) => a.id !== registro.id);
   const servicioIds = registro.servicioIds || [];
 
-  return (
-    <>
-      {/* CABECERA DE LA ATENCIÓN */}
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
-        <div>
-          <h4 className="fw-bold mb-2">Ficha de atención</h4>
-          <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
-            <Estado valor={registro.estado} />
-            {registro.esReingreso && (
-              <Badge bg="info" text="dark">Dispositivo recurrente</Badge>
-            )}
-          </div>
-          <small className={modoOscuro ? 'text-light' : 'text-muted'}>
-            Atención: {registro.id}
-          </small>
-        </div>
+  // Las respuestas pueden guardar solo el ID: mostrar la descripción de la plantilla.
+  const tareaNombre = (item) => {
+    const plantilla = datos.plantillasChecklist?.find((p) => p.servicioId === item.servicioId);
+    return item.descripcion || plantilla?.items?.find((tarea) => tarea.id === item.itemId)?.descripcion;
+  };
 
-        <Button variant="outline-secondary" onClick={onVolver}>
-          Volver al historial
+  return (
+    <div className="hist-detail">
+      <div className="hist-detail-title">
+        <div>
+          <p className="hist-eyebrow">DETALLE DEL SERVICIO</p>
+          <h2>Ficha de atención</h2>
+          <div className="hist-detail-badges">
+            <Estado valor={registro.estado} />
+            {registro.esReingreso && <Badge bg="info" text="dark" className="hist-status">Dispositivo recurrente</Badge>}
+          </div>
+          <span className="hist-id">Atención: {registro.id}</span>
+        </div>
+        <Button variant="link" className="hist-btn hist-btn--outline" onClick={onVolver}>
+          ← Volver al historial
         </Button>
       </div>
 
-      {/* RESUMEN */}
-      <Card className={cardClass}>
-        <Card.Body className="p-4">
-          <Row className="g-4 align-items-center">
-            <Col md={7}>
-              <h5 className="fw-bold mb-2">
-                {nombreEquipo || 'Dispositivo sin identificar'}
-              </h5>
-              <p className="mb-1">{mostrar(nombrePropietario)}</p>
-              <small className={modoOscuro ? 'text-light' : 'text-muted'}>
-                Dispositivo ID: {mostrar(dispositivo.id)}
-              </small>
-            </Col>
-
-            <Col md={5}>
-              <div className={`rounded-3 p-3 ${
-                modoOscuro ? 'bg-secondary' : 'bg-light'
-              }`}>
-                <Campo nombre="Período" valor={jornada.periodo} />
-                <Campo nombre="Jornada" valor={fechaJornada(jornada.fecha)} />
-                <p className="mb-0">
-                  <strong>Visitas registradas:</strong> {atencionesEquipo.length}
-                </p>
-              </div>
-            </Col>
-          </Row>
+      <Card className="hist-card hist-detail-hero">
+        <Card.Body className="hist-card__body">
+          <div className="hist-detail-hero__layout">
+            <div>
+              <p className="hist-label">DISPOSITIVO</p>
+              <h3>{nombreEquipo || 'Dispositivo sin identificar'}</h3>
+              <p>{mostrar(nombrePropietario)}</p>
+              <span className="hist-id">Dispositivo ID: {mostrar(dispositivo.id)}</span>
+            </div>
+            <div className="hist-detail-metadata">
+              <div><span>Período</span><strong>{mostrar(jornada.periodo)}</strong></div>
+              <div><span>Jornada</span><strong>{fechaJornada(jornada.fecha)}</strong></div>
+              <div><span>Visitas registradas</span><strong>{atencionesEquipo.length}</strong></div>
+            </div>
+          </div>
         </Card.Body>
       </Card>
 
-      {/* 1. PROPIETARIO Y DISPOSITIVO */}
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>1. Propietario y dispositivo</Card.Header>
-        <Card.Body className="p-4">
-          <Row className="g-4">
-            <Col lg={6}>
-              <h6 className="fw-bold mb-3">Datos del propietario</h6>
+      <Seccion numero={1} titulo="Propietario y dispositivo"
+        subtitulo="Identificación y datos de contacto registrados.">
+        <Row className="g-4">
+          <Col lg={6}>
+            <div className="hist-detail-group">
+              <h3>Datos del propietario</h3>
               <Campo nombre="Nombre" valor={nombrePropietario} />
               <Campo nombre="RUT" valor={propietario.rut} />
               <Campo nombre="Teléfono" valor={propietario.telefono} />
               <Campo nombre="Correo" valor={propietario.correo} />
               <Campo nombre="Comuna" valor={propietario.comuna} />
               <Campo nombre="Sector" valor={propietario.sector} />
-            </Col>
-
-            <Col lg={6}>
-              <h6 className="fw-bold mb-3">Identificación del equipo</h6>
+            </div>
+          </Col>
+          <Col lg={6}>
+            <div className="hist-detail-group">
+              <h3>Identificación del equipo</h3>
               <Campo nombre="Marca" valor={dispositivo.marca} />
               <Campo nombre="Modelo" valor={dispositivo.modelo} />
               <Campo nombre="Tipo" valor={dispositivo.tipo} />
               <Campo nombre="N.º de serie" valor={dispositivo.numeroSerie} />
-              <Campo nombre="Origen" valor={
-                registro.origenRegistro === 'presencial'
-                  ? 'Registro presencial'
-                  : 'Preinscripción'
-              } />
-              <Campo nombre="Fecha de registro" valor={
-                mostrarFecha(registro.fechaPreinscripcion)
-              } />
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
+              <Campo nombre="Origen" valor={registro.origenRegistro === 'presencial' ? 'Registro presencial' : 'Preinscripción'} />
+              <Campo nombre="Fecha de registro" valor={mostrarFecha(registro.fechaPreinscripcion)} />
+            </div>
+          </Col>
+        </Row>
+      </Seccion>
 
-      {/* 2. RECEPCIÓN Y DIAGNÓSTICO */}
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>2. Recepción y diagnóstico</Card.Header>
-        <Card.Body className="p-4">
-          <div className="mb-3">
-            <strong>Estado de la atención: </strong>
-            <Estado valor={registro.estado} />
-          </div>
+      <Seccion numero={2} titulo="Recepción y diagnóstico"
+        subtitulo="Información del ingreso e inspección inicial.">
+        <div className="hist-section-lead">
+          <span>Estado de la atención</span>
+          <Estado valor={registro.estado} />
+        </div>
+        <Row className="g-4">
+          <Col lg={6}>
+            <div className="hist-detail-group">
+              <h3>Ingreso a taller</h3>
+              <Campo nombre="Fecha de recepción" valor={mostrarFecha(registro.fechaRecepcion)} />
+              <Campo nombre="Técnico(s)" valor={tecnicos} />
+              <Campo nombre="Falla informada" valor={registro.diagnosticoPropietario} />
+              <Campo nombre="Servicios solicitados" valor={servicioIds.map(servicioNombre).join(', ')} />
+            </div>
+          </Col>
+          <Col lg={6}>
+            <div className="hist-detail-group">
+              <h3>Inspección inicial del técnico</h3>
+              <Campo nombre="Encendido" valor={inspeccion.encendido} />
+              <Campo nombre="Estado físico" valor={inspeccion.estadoFisico} />
+              <Campo nombre="Accesorios" valor={inspeccion.accesorios} />
+              {!registro.inspeccionInicial && (
+                <Alert variant="secondary" className="hist-note mt-3 mb-0">
+                  El técnico todavía no registra la inspección inicial.
+                </Alert>
+              )}
+            </div>
+          </Col>
+        </Row>
+      </Seccion>
 
-          <Campo nombre="Fecha de recepción"
-            valor={mostrarFecha(registro.fechaRecepcion)} />
-          <Campo nombre="Técnico(s)" valor={tecnicos} />
-          <Campo nombre="Falla informada"
-            valor={registro.diagnosticoPropietario} />
-          <Campo nombre="Servicios solicitados"
-            valor={servicioIds.map(servicioNombre).join(', ')} />
-
-          <hr />
-
-          <h6 className="fw-bold mb-3">Inspección inicial del técnico</h6>
-
-          <Campo nombre="Encendido" valor={inspeccion.encendido} />
-          <Campo nombre="Estado físico" valor={inspeccion.estadoFisico} />
-          <Campo nombre="Accesorios" valor={inspeccion.accesorios} />
-
-          {!registro.inspeccionInicial && (
-            <Alert variant="secondary" className="small mt-3 mb-0">
-              El técnico todavía no registra la inspección inicial.
-            </Alert>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* 3. CHECKLIST */}
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>3. Checklist y trabajo técnico</Card.Header>
-        <Card.Body className="p-4">
-          <div className="d-flex flex-wrap justify-content-between gap-2 mb-3">
-            <h6 className="fw-bold mb-0">Tareas registradas</h6>
-            <Badge bg="secondary">{checklist.length} tareas</Badge>
-          </div>
-
-          <Table responsive bordered hover size="sm"
-            variant={modoOscuro ? 'dark' : 'light'}
-            className="align-middle">
-            <thead>
-              <tr>
-                <th>Servicio</th>
-                <th>Tarea</th>
-                <th>Resultado</th>
-                <th>Observación</th>
-              </tr>
-            </thead>
+      <Seccion numero={3} titulo="Checklist y trabajo técnico"
+        subtitulo="Resultado de las tareas aplicadas a los servicios.">
+        <div className="hist-section-lead">
+          <span>Tareas registradas</span>
+          <span className="hist-count-pill">{checklist.length} {checklist.length === 1 ? 'tarea' : 'tareas'}</span>
+        </div>
+        <div className="hist-table-area hist-checklist-table">
+          <Table responsive hover size="sm" variant={modoOscuro ? 'dark' : 'light'}
+            className="hist-table align-middle mb-0">
+            <thead><tr><th>Servicio</th><th>Tarea</th><th>Resultado</th><th>Observación</th></tr></thead>
             <tbody>
               {checklist.map((item, indice) => {
                 const respuesta = item.estado ?? item.respuesta ?? item.resultado;
-
                 return (
                   <tr key={`${item.servicioId}-${item.itemId}-${indice}`}>
                     <td>{servicioNombre(item.servicioId)}</td>
-                    <td>{mostrar(item.descripcion)}</td>
-                    <td>{mostrar(respuesta)}</td>
+                    <td>{mostrar(tareaNombre(item))}</td>
+                    <td><span className="hist-result">{mostrar(respuesta)}</span></td>
                     <td>{mostrar(item.observacion)}</td>
                   </tr>
                 );
               })}
-
               {checklist.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center py-4">
-                    Todavía no se han registrado tareas del checklist.
-                  </td>
-                </tr>
+                <tr><td colSpan={4} className="hist-table-empty">Todavía no se han registrado tareas del checklist.</td></tr>
               )}
             </tbody>
           </Table>
+        </div>
+        <div className="hist-detail-footer-fields">
+          <Campo nombre="Observaciones técnicas" valor={registro.observacionesTecnicas} />
+          <Campo nombre="Última actualización" valor={mostrarFecha(registro.fechaUltimaActualizacion)} />
+        </div>
+      </Seccion>
 
-          <Campo nombre="Observaciones técnicas"
-            valor={registro.observacionesTecnicas} />
-          <Campo nombre="Última actualización"
-            valor={mostrarFecha(registro.fechaUltimaActualizacion)} />
-        </Card.Body>
-      </Card>
+      <Seccion numero={4} titulo="Comparación inicial y final"
+        subtitulo="Comprueba las diferencias antes y después del servicio.">
+        <Row className="g-3">
+          <Col md={6}>
+            <div className="hist-compare hist-compare--initial">
+              <div className="hist-compare__heading">Estado inicial</div>
+              <Campo nombre="Encendido" valor={inspeccion.encendido} />
+              <Campo nombre="Estado físico" valor={inspeccion.estadoFisico} />
+              <Campo nombre="Accesorios" valor={inspeccion.accesorios} />
+            </div>
+          </Col>
+          <Col md={6}>
+            <div className="hist-compare hist-compare--final">
+              <div className="hist-compare__heading">Estado final</div>
+              <Campo nombre="Encendido" valor={verificacion.encendido} />
+              <Campo nombre="Estado físico" valor={verificacion.estadoFisico} />
+              <Campo nombre="Accesorios" valor={verificacion.accesorios} />
+            </div>
+          </Col>
+        </Row>
+        <div className="hist-detail-footer-fields">
+          <Campo nombre="Diferencias detectadas" valor={verificacion.diferencias} />
+          <Campo nombre="Resultado del servicio" valor={verificacion.resultadoServicio} />
+          <Campo nombre="Fecha de verificación" valor={mostrarFecha(registro.fechaVerificacionFinal)} />
+        </div>
+        {!registro.verificacionFinal && (
+          <Alert variant="info" className="hist-note mt-3 mb-0">La verificación final todavía no ha sido registrada.</Alert>
+        )}
+      </Seccion>
 
-      {/* 4. COMPARACIÓN INICIAL Y FINAL */}
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>
-          4. Comparación del estado inicial y final
-        </Card.Header>
-
-        <Card.Body className="p-4">
-          <Row className="g-3">
-            <Col md={6}>
-              <div className={`h-100 rounded-3 border p-3 ${
-                modoOscuro ? 'bg-dark' : 'bg-light'
-              }`}>
-                <h6 className="fw-bold mb-3">Estado inicial</h6>
-                <Campo nombre="Encendido" valor={inspeccion.encendido} />
-                <Campo nombre="Estado físico" valor={inspeccion.estadoFisico} />
-                <Campo nombre="Accesorios" valor={inspeccion.accesorios} />
-              </div>
-            </Col>
-
-            <Col md={6}>
-              <div className={`h-100 rounded-3 border p-3 ${
-                modoOscuro ? 'bg-dark' : 'bg-light'
-              }`}>
-                <h6 className="fw-bold mb-3">Estado final</h6>
-                <Campo nombre="Encendido" valor={verificacion.encendido} />
-                <Campo nombre="Estado físico" valor={verificacion.estadoFisico} />
-                <Campo nombre="Accesorios" valor={verificacion.accesorios} />
-              </div>
-            </Col>
-          </Row>
-
-          <div className="mt-4">
-            <Campo nombre="Diferencias detectadas"
-              valor={verificacion.diferencias} />
-            <Campo nombre="Resultado del servicio"
-              valor={verificacion.resultadoServicio} />
-            <Campo nombre="Fecha de verificación"
-              valor={mostrarFecha(registro.fechaVerificacionFinal)} />
-          </div>
-
-          {!registro.verificacionFinal && (
-            <Alert variant="info" className="small mt-3 mb-0">
-              La verificación final todavía no ha sido registrada.
-            </Alert>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* 5. CONTACTO Y ENTREGA */}
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>5. Contacto y entrega</Card.Header>
-        <Card.Body className="p-4">
-          <Row className="g-4">
-            <Col md={6}>
-              <h6 className="fw-bold mb-3">Aviso al propietario</h6>
+      <Seccion numero={5} titulo="Contacto y entrega"
+        subtitulo="Comunicación con el propietario y cierre de la atención.">
+        <Row className="g-4">
+          <Col md={6}>
+            <div className="hist-detail-group">
+              <h3>Aviso al propietario</h3>
               <Campo nombre="Medio" valor={contacto.medio} />
               <Campo nombre="Resultado" valor={contacto.observaciones} />
               <Campo nombre="Fecha" valor={mostrarFecha(contacto.fecha)} />
-            </Col>
-
-            <Col md={6}>
-              <h6 className="fw-bold mb-3">Entrega del dispositivo</h6>
+            </div>
+          </Col>
+          <Col md={6}>
+            <div className="hist-detail-group">
+              <h3>Entrega del dispositivo</h3>
               <Campo nombre="Recibido por" valor={entrega.recibidoPor} />
               <Campo nombre="Conformidad" valor={entrega.conformidad} />
               <Campo nombre="Prueba conjunta" valor={
                 entrega.pruebaConPropietario === undefined
                   ? 'No registrada'
-                  : entrega.pruebaConPropietario
-                    ? 'Confirmada'
-                    : 'No confirmada'
+                  : entrega.pruebaConPropietario ? 'Confirmada' : 'No confirmada'
               } />
               <Campo nombre="Observaciones" valor={entrega.observaciones} />
               <Campo nombre="Fecha" valor={mostrarFecha(entrega.fecha)} />
-            </Col>
-          </Row>
-
-          {registro.estado === 'entregado' && (
-            <Alert variant="success" className="mt-3 mb-0">
-              Esta atención figura como entregada al propietario.
-            </Alert>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* 6. OTRAS VISITAS */}
-      <Card className={cardClass}>
-        <Card.Header className={headerClass}>
-          6. Relación con otras atenciones del dispositivo
-        </Card.Header>
-
-        <Card.Body className="p-4">
-          <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-            Todas estas atenciones comparten el mismo identificador de dispositivo.
-            Cada una conserva su propio diagnóstico, servicios y estado.
-          </p>
-
-          <div className={`rounded-3 border p-3 mb-3 ${
-            modoOscuro ? 'bg-secondary text-light' : 'bg-light'
-          }`}>
-            <div className="d-flex flex-wrap gap-2 align-items-center mb-2">
-              <strong>Atención que estás consultando</strong>
-              <Estado valor={registro.estado} />
             </div>
+          </Col>
+        </Row>
+        {registro.estado === 'entregado' && (
+          <Alert variant="success" className="hist-note mt-3 mb-0">
+            Esta atención figura como entregada al propietario.
+          </Alert>
+        )}
+      </Seccion>
 
-            <div className="small mb-1">
-              {mostrar(jornada.periodo)} — {fechaJornada(jornada.fecha)}
-            </div>
-
-            <div className="small text-break">{registro.id}</div>
+      <Seccion numero={6} titulo="Relación con otras atenciones"
+        subtitulo="Visitas independientes que comparten el mismo dispositivo.">
+        <p className="hist-section-explanation">
+          Todas estas atenciones comparten el mismo identificador de dispositivo.
+          Cada una conserva su propio diagnóstico, servicios y estado.
+        </p>
+        <div className="hist-visit-entry hist-visit-entry--current">
+          <div className="hist-visit-entry__heading">
+            <strong>Atención que estás consultando</strong>
+            <Estado valor={registro.estado} />
           </div>
+          <p>{mostrar(jornada.periodo)} — {fechaJornada(jornada.fecha)}</p>
+          <span className="hist-id">{registro.id}</span>
+        </div>
 
-          {otrasAtenciones.length > 0 ? (
-            <>
-              <h6 className="fw-bold mb-3">
-                Otras visitas registradas ({otrasAtenciones.length})
-              </h6>
-
-              {otrasAtenciones.map((atencion) => (
-                <div key={atencion.id} className="border-bottom py-3">
-                  <div className="d-flex flex-wrap justify-content-between gap-2 mb-2">
-                    <strong>
-                      {mostrar(atencion.jornada?.periodo)} — {
-                        fechaJornada(atencion.jornada?.fecha)
-                      }
-                    </strong>
-                    <Estado valor={atencion.estado} />
-                  </div>
-
-                  <p className="small mb-1 text-break">
-                    Atención: {atencion.id}
-                  </p>
-
-                  <p className="small mb-0">
-                    Servicios: {(atencion.servicioIds || [])
-                      .map(servicioNombre).join(', ') || 'No informados'}
-                  </p>
+        {otrasAtenciones.length > 0 ? (
+          <>
+            <h3 className="hist-other-title">Otras visitas registradas ({otrasAtenciones.length})</h3>
+            {otrasAtenciones.map((atencion) => (
+              <div key={atencion.id} className="hist-visit-entry">
+                <div className="hist-visit-entry__heading">
+                  <strong>{mostrar(atencion.jornada?.periodo)} — {fechaJornada(atencion.jornada?.fecha)}</strong>
+                  <Estado valor={atencion.estado} />
                 </div>
-              ))}
-
-              <p className={`small mt-3 mb-0 ${
-                modoOscuro ? 'text-light' : 'text-muted'
-              }`}>
-                Para abrir la ficha de otra visita, utiliza la tabla
-                «Historial del dispositivo» situada arriba de esta ficha.
-              </p>
-            </>
-          ) : (
-            <Alert variant="info" className="mb-0">
-              Este dispositivo todavía no tiene otras visitas registradas.
-            </Alert>
-          )}
-        </Card.Body>
-      </Card>
-    </>
+                <p className="hist-id">Atención: {atencion.id}</p>
+                <p>Servicios: {(atencion.servicioIds || []).map(servicioNombre).join(', ') || 'No informados'}</p>
+              </div>
+            ))}
+            <p className="hist-section-explanation mt-3 mb-0">
+              Para abrir la ficha de otra visita, utiliza la tabla «Historial del dispositivo» situada arriba.
+            </p>
+          </>
+        ) : (
+          <Alert variant="info" className="hist-note mb-0">
+            Este dispositivo todavía no tiene otras visitas registradas.
+          </Alert>
+        )}
+      </Seccion>
+    </div>
   );
 }
