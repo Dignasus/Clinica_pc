@@ -1,96 +1,91 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import logoInacap from '../assets/logo-inacap.png';
+import fotoCampus from '../assets/login-campus.jpg';
+import './Login.css';
+
+const usuariosMock = {
+  admin: { rol: 'superusuario', nombre: 'Matías Carrasco' },
+  recepcion: { rol: 'recepcionista', nombre: 'Camila Rojas' },
+  tecnico: { rol: 'tecnico', nombre: 'Cristian' },
+  cliente: { rol: 'cliente', nombre: 'Cliente Invitado' },
+};
 
 export default function Login() {
-  // Aquí estaba el error. Cambiamos 'rut' por 'usuario'
   const [credenciales, setCredenciales] = useState({ usuario: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const usuariosMock = {
-    'admin': { rol: 'superusuario', nombre: 'Matías Carrasco' },
-    'recepcion': { rol: 'recepcionista', nombre: 'Camila Rojas' },
-    'tecnico': { rol: 'tecnico', nombre: 'Cristian' },
-    'cliente': { rol: 'cliente', nombre: 'Cliente Invitado' }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredenciales(prev => ({ ...prev, [name]: value }));
+  const handleChange = ({ target: { name, value } }) => {
+    setCredenciales((prev) => ({ ...prev, [name]: value }));
+    if (error) setError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validar que el usuario haya escrito algo
-    if (!credenciales.usuario || !credenciales.password) {
+
+    const usuarioIngresado = credenciales.usuario.toLowerCase().trim();
+    if (!usuarioIngresado || !credenciales.password) {
       setError('Por favor, complete ambos campos.');
       return;
     }
 
-    const usuarioIngresado = credenciales.usuario.toLowerCase().trim();
-    
-    if (usuariosMock[usuarioIngresado] && credenciales.password === '123') {
-      sessionStorage.setItem('authToken', 'sesion-activa'); // Sim
-      sessionStorage.setItem('userRol', usuariosMock[usuarioIngresado].rol);
-      sessionStorage.setItem('userNombre', usuariosMock[usuarioIngresado].nombre);
-      navigate('/panel', { replace: true });
-    } else {
+    const perfil = usuariosMock[usuarioIngresado];
+    if (!perfil || credenciales.password !== '123') {
       setError('Credenciales inválidas. Revise su usuario y contraseña.');
+      return;
     }
+
+    sessionStorage.setItem('authToken', 'sesion-activa');
+    sessionStorage.setItem('userRol', perfil.rol);
+    sessionStorage.setItem('userNombre', perfil.nombre);
+    navigate('/panel', { replace: true });
   };
 
   return (
-    <Container fluid className="vh-100 d-flex align-items-center justify-content-center" style={{ backgroundColor: '#f4f4f4' }}>
-      <Row className="w-100 justify-content-center">
-        <Col xs={12} md={8} lg={4}>
-          <Card className="shadow-lg border-0 rounded-3 mb-3">
-            <Card.Body className="p-5">
-              
-              <div className="text-center mb-4">
-                <h2 style={{ color: '#cc0000', fontWeight: 'bold' }}>Clínica del PC</h2>
-                <p className="text-muted mb-0">Sistema de Gestión Integral</p>
-              </div>
-              
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3" controlId="usuario">
-                  <Form.Label className="fw-bold">Usuario</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="usuario" 
-                    value={credenciales.usuario} 
-                    onChange={handleChange} 
-                    placeholder="Ingrese su usuario..." 
-                    autoComplete="off" 
-                    size="lg" 
-                  />
-                </Form.Group>
-                
-                <Form.Group className="mb-4" controlId="password">
-                  <Form.Label className="fw-bold">Contraseña</Form.Label>
-                  <Form.Control 
-                    type="password" 
-                    name="password" 
-                    value={credenciales.password} 
-                    onChange={handleChange} 
-                    placeholder="Ingrese su contraseña..." 
-                    size="lg" 
-                  />
-                </Form.Group>
+    <main className="cpc-login">
+      <section className="cpc-login__left" aria-labelledby="cpc-login-title">
+        <header className="cpc-login__brand">
+          <img src={logoInacap} alt="INACAP" />
+          <span className="cpc-login__slogan">APRENDER<br />HACIENDO</span>
+        </header>
 
-                {error && <Alert variant="danger" className="text-center py-2">{error}</Alert>}
-                
-                <div className="d-grid mt-2">
-                  <Button type="submit" size="lg" style={{ backgroundColor: '#cc0000', borderColor: '#cc0000' }}>
-                    Ingresar al Sistema
-                  </Button>
-                </div>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+        <div className="cpc-login__content">
+          <div className="cpc-login__heading">
+            <span className="cpc-login__accent" aria-hidden="true" />
+            <div>
+              <h1 id="cpc-login-title">Clínica del PC</h1>
+              <p>Sistema de Gestión de Servicios Técnicos</p>
+            </div>
+          </div>
+
+          <form className="cpc-login__form" onSubmit={handleSubmit}>
+            <label htmlFor="cpc-usuario">Usuario</label>
+            <input
+              id="cpc-usuario" name="usuario" type="text"
+              value={credenciales.usuario} onChange={handleChange}
+              placeholder="Ingrese su usuario" autoComplete="username" required
+            />
+
+            <label htmlFor="cpc-password">Contraseña</label>
+            <input
+              id="cpc-password" name="password" type="password"
+              value={credenciales.password} onChange={handleChange}
+              placeholder="Ingrese su contraseña" autoComplete="current-password" required
+            />
+
+            {error && <div className="cpc-login__error" role="alert">{error}</div>}
+
+            <button className="cpc-login__submit" type="submit">Iniciar sesión</button>
+          </form>
+        </div>
+
+        <footer className="cpc-login__footer">Prototipo académico · Acceso de demostración</footer>
+      </section>
+
+      <aside className="cpc-login__photo" aria-label="Imagen ilustrativa de un campus educativo">
+        <img src={fotoCampus} alt="Estudiantes junto a un edificio académico" />
+      </aside>
+    </main>
   );
 }

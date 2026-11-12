@@ -1,158 +1,467 @@
-import { useState } from 'react';
-import { Card, Form, Row, Col, Button, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
 
-export default function InscripcionQR({ modoOscuro }) {
-  const [formData, setFormData] = useState({
-    rut: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '',
-    telefono: '', correo: '', comuna: '', sector: '',
-    marcaEquipo: '', modeloEquipo: '', numeroSerie: '', diagnosticoPropietario: '',
-    servicios: { formateo: false, mantencionFisica: false, mantencionLogica: false },
-    aceptaTerminos: false
+import { useEffect, useState } from 'react';
+import { Form, Button, Alert } from 'react-bootstrap';
+import './inscripcion/InscripcionQRVisual.css';
+
+import DatosPersonales from './inscripcion/DatosPersonales.jsx';
+import DatosEquipo from './inscripcion/DatosEquipo.jsx';
+import TerminosLegales from './inscripcion/TerminosLegales.jsx';
+
+import { useClinica } from '../context/clinicaContextBase.js';
+import { normalizarRut, validarRut } from '../utils/rut.js';
+import {
+  jornadaPermiteInscripcion,
+  obtenerEstadoJornada,
+  etiquetasEstadoJornada,
+} from '../utils/jornadas.js';
+import {
+  encontrarRegionDeComuna,
+  comunasDeRegion,
+} from '../data/regionesChile.js';
+import {
+  buscarDispositivoPrevio,
+  normalizarRutIdentidad,
+} from '../utils/dispositivos.js';
+
+const formularioInicial = {
+  rut: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '',
+  telefono: '', correo: '',
+  region: '', comuna: '', sector: '',
+  marcaEquipo: '', modeloEquipo: '', numeroSerie: '',
+  diagnosticoPropietario: '',
+  servicios: {
+    formateo: false,
+    mantencionFisica: false,
+    mantencionLogica: false,
+  },
+  aceptaTerminos: false,
+};
+
+
+const TEMA_KEY = 'clinica-pc-tema';
+
+export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false }) {
+  // La ruta pública no tiene el Header del panel, por eso gestiona su propio botón.
+  const [modoOscuro, setModoOscuro] = useState(() => {
+    try {
+      const preferencia = localStorage.getItem(TEMA_KEY);
+      if (preferencia === 'oscuro') return true;
+      if (preferencia === 'claro') return false;
+    } catch {
+      // Sin acceso a localStorage, sigue funcionando con el valor inicial.
+    }
+    return Boolean(modoOscuroInicial);
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TEMA_KEY, modoOscuro ? 'oscuro' : 'claro');
+    } catch {
+      // El tema sigue siendo seleccionable sin persistencia.
+    }
+  }, [modoOscuro]);
+
+  const botonTema = (
+    <button
+      type="button"
+      className="cp-qr__theme-toggle"
+      onClick={() => setModoOscuro((anterior) => !anterior)}
+      aria-label={modoOscuro ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+      aria-pressed={modoOscuro}
+    >
+      <span aria-hidden="true">{modoOscuro ? '☀' : '☾'}</span>
+      {modoOscuro ? 'Modo claro' : 'Modo oscuro'}
+    </button>
+  );
+  const { datos, dispatch } = useClinica();
+
+  const [formData, setFormData] = useState(formularioInicial);
+  const [jornadaId, setJornadaId] = useState('');
+  const [confirmacion, setConfirmacion] = useState(null);
+  const [error, setError] = useState('');
+
+  const jornadasDisponibles = [...datos.jornadas]
+    .filter(jornadaPermiteInscripcion)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    if (type === 'checkbox') {
-      if (['formateo', 'mantencionFisica', 'mantencionLogica'].includes(name)) {
-        setFormData(prev => ({ ...prev, servicios: { ...prev.servicios, [name]: checked } }));
-      } else {
-        setFormData(prev => ({ ...prev, [name]: checked }));
+
+    setFormData((prev) => {
+      if (Object.hasOwn(prev.servicios, name)) {
+        return {
+          ...prev,
+          servicios: {
+            ...prev.servicios,
+            [name]: checked,
+          },
+        };
       }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+
+      return {
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+      };
+    });
+
+    setError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Preinscripción guardada exitosamente. El cliente ha aceptado los términos legales.');
+    setError('');
+
+    const jornada = jornadasDisponibles.find(
+      (j) => j.id === jornadaId
+    );
+
+    if (!jornada) {
+      return setError('Selecciona una jornada disponible.');
+    }
+
+    if (!validarRut(formData.rut)) {
+      return setError('El RUT ingresado no es válido.');
+    }
+
+    // Validar región y comuna como una combinación coherente.
+    const region = formData.region ||
+      encontrarRegionDeComuna(formData.comuna);
+
+    if (!region) {
+      return setError('Selecciona una región.');
+    }
+
+    if (!comunasDeRegion(region).includes(formData.comuna)) {
+      return setError('Selecciona una comuna válida para la región.');
+    }
+
+    const servicioIds = Object.entries(formData.servicios)
+      .filter(([, seleccionado]) => seleccionado)
+      .map(([id]) => id);
+
+    if (!servicioIds.length) {
+      return setError('Selecciona al menos un servicio.');
+    }
+
+    if (!formData.aceptaTerminos) {
+      return setError('Debes aceptar los términos y condiciones.');
+    }
+
+    const camposTextoObligatorios = [
+      'nombre',
+      'apellidoPaterno',
+      'apellidoMaterno',
+      'telefono',
+      'correo',
+      'sector',
+      'marcaEquipo',
+      'modeloEquipo',
+      'diagnosticoPropietario',
+    ];
+
+    if (camposTextoObligatorios.some((campo) =>
+      !String(formData[campo] ?? '').trim()
+    )) {
+      return setError(
+        'Completa los campos obligatorios con información válida; no uses solo espacios.'
+      );
+    }
+
+    const rut = normalizarRut(formData.rut);
+
+    const existente = datos.propietarios.find(
+      (p) => normalizarRutIdentidad(p.rut) ===
+        normalizarRutIdentidad(rut)
+    );
+
+    const propietarioId = existente?.id ||
+      `PROP-${crypto.randomUUID()}`;
+
+    // Reconocer un equipo anterior por propietario y número de serie.
+    const dispositivoAnterior = buscarDispositivoPrevio(
+      datos.dispositivos,
+      propietarioId,
+      {
+        marca: formData.marcaEquipo,
+        numeroSerie: formData.numeroSerie,
+      }
+    );
+
+    // Impedir la duplicación identificable dentro de la misma jornada.
+    const yaInscrito = dispositivoAnterior &&
+      datos.atenciones.some((a) =>
+        a.dispositivoId === dispositivoAnterior.id &&
+        a.jornadaId === jornada.id &&
+        a.estado !== 'cancelado'
+      );
+
+    if (yaInscrito) {
+      return setError(
+        'Este dispositivo ya tiene una inscripción para la jornada ' +
+        'seleccionada. No es necesario registrarlo nuevamente.'
+      );
+    }
+
+    const dispositivoId = `DISP-${crypto.randomUUID()}`;
+    const atencionId = `AT-${crypto.randomUUID()}`;
+    const fechaRegistro = new Date().toISOString();
+
+    const propietario = {
+      id: propietarioId,
+      rut,
+      nombre: formData.nombre.trim(),
+      apellidoPaterno: formData.apellidoPaterno.trim(),
+      apellidoMaterno: formData.apellidoMaterno.trim(),
+      telefono: formData.telefono.trim(),
+      correo: formData.correo.trim(),
+      region,
+      comuna: formData.comuna.trim(),
+      sector: formData.sector.trim(),
+    };
+
+    const dispositivo = {
+      id: dispositivoId,
+      propietarioId,
+      tipo: 'pendiente',
+      marca: formData.marcaEquipo.trim(),
+      modelo: formData.modeloEquipo.trim(),
+      numeroSerie: formData.numeroSerie.trim(),
+    };
+
+    const atencion = {
+      id: atencionId,
+      dispositivoId,
+      jornadaId: jornada.id,
+      servicioIds,
+      origenRegistro: 'qr',
+      diagnosticoPropietario:
+        formData.diagnosticoPropietario.trim(),
+      fechaPreinscripcion: fechaRegistro,
+      fechaAceptacionTerminos: fechaRegistro,
+      tecnicoIds: [],
+      estado: 'preinscrito',
+      observaciones: [],
+      respuestasChecklist: [],
+    };
+
+    dispatch({
+      type: 'REGISTRAR_PREINSCRIPCION',
+      payload: { propietario, dispositivo, atencion },
+    });
+
+    setConfirmacion({
+      atencionId,
+      nombre: `${propietario.nombre} ${propietario.apellidoPaterno}`,
+      equipo: `${dispositivo.marca} ${dispositivo.modelo}`,
+      jornada: `${jornada.periodo} — ${jornada.fecha}`,
+      region,
+      comuna: propietario.comuna,
+      fechaRegistro,
+      esReingreso: Boolean(dispositivoAnterior),
+    });
+
+    // Mantener al propietario para registrar otro dispositivo.
+    setFormData((prev) => ({
+      ...prev,
+      marcaEquipo: '',
+      modeloEquipo: '',
+      numeroSerie: '',
+      diagnosticoPropietario: '',
+      servicios: {
+        formateo: false,
+        mantencionFisica: false,
+        mantencionLogica: false,
+      },
+      aceptaTerminos: false,
+    }));
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const headerClass = `fw-bold py-3 ${modoOscuro ? 'bg-secondary text-light border-secondary' : 'bg-white'}`;
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
+  const agregarOtroEquipo = () => {
+    setConfirmacion(null);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const nuevaInscripcion = () => {
+    setFormData({ ...formularioInicial });
+    setJornadaId('');
+    setConfirmacion(null);
+    setError('');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (confirmacion) {
+    return (
+      <div className="cp-qr" data-cp-qr-theme={modoOscuro ? 'dark' : 'light'} data-bs-theme={modoOscuro ? 'dark' : 'light'}>
+        <div className="cp-qr__theme-row">{botonTema}</div>
+        <div className="cp-qr__confirmation" aria-live="polite">
+          <div className="cp-qr__success-symbol" aria-hidden="true">✓</div>
+          <p className="cp-qr__eyebrow">CLÍNICA DEL PC / REGISTRO COMPLETADO</p>
+          <h1>¡Preinscripción registrada!</h1>
+          <p className="cp-qr__lead">
+            Tu equipo quedó preinscrito para la jornada seleccionada.
+            Presenta el dispositivo en recepción durante esa jornada.
+          </p>
+
+          <section className="cp-qr__receipt" aria-label="Resumen de la preinscripción">
+            <div className="cp-qr__receipt-head">
+              <div>
+                <span className="cp-qr__caption">COMPROBANTE</span>
+                <h2>Resumen de la inscripción</h2>
+              </div>
+              <span className="cp-qr__receipt-status">Registrada</span>
+            </div>
+            <dl className="cp-qr__receipt-grid">
+              <div><dt>Propietario</dt><dd>{confirmacion.nombre}</dd></div>
+              <div><dt>Dispositivo</dt><dd>{confirmacion.equipo}</dd></div>
+              <div><dt>Región</dt><dd>{confirmacion.region}</dd></div>
+              <div><dt>Comuna</dt><dd>{confirmacion.comuna}</dd></div>
+              <div><dt>Jornada</dt><dd>{confirmacion.jornada}</dd></div>
+              <div>
+                <dt>Fecha de registro</dt>
+                <dd>{new Date(confirmacion.fechaRegistro).toLocaleString('es-CL')}</dd>
+              </div>
+              <div className="cp-qr__receipt-id">
+                <dt>Número de atención</dt>
+                <dd>{confirmacion.atencionId}</dd>
+              </div>
+            </dl>
+          </section>
+
+          {confirmacion.esReingreso && (
+            <Alert variant="success" className="cp-qr__notice">
+              El equipo fue reconocido como un dispositivo registrado anteriormente.
+              Se creó una nueva atención conservando la ficha del dispositivo.
+            </Alert>
+          )}
+
+          <Alert variant="info" className="cp-qr__notice">
+            Esta confirmación corresponde a una <strong>preinscripción</strong>.
+            Debes presentar el equipo en recepción durante la jornada para continuar la atención.
+          </Alert>
+
+          <div className="cp-qr__receipt-actions">
+            <Button variant="danger" className="cp-qr__primary" onClick={agregarOtroEquipo}>
+              Agregar otro dispositivo
+            </Button>
+            <Button variant="outline-secondary" className="cp-qr__secondary" onClick={nuevaInscripcion}>
+              Nueva inscripción
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="mb-4">
-        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>Formulario de Preinscripción (Vista Cliente)</h3>
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>Ingrese sus datos personales y los de su equipo para agilizar la recepción.</p>
-      </div>
+    <div className="cp-qr" data-cp-qr-theme={modoOscuro ? 'dark' : 'light'} data-bs-theme={modoOscuro ? 'dark' : 'light'}>
+      <header className="cp-qr__intro">
+        <div className="cp-qr__intro-text">
+          <span className="cp-qr__eyebrow">CLÍNICA DEL PC / INSCRIPCIÓN</span>
+          <h1>Preinscripción de equipos</h1>
+          <p>
+            Selecciona una jornada y registra tus datos y los del dispositivo
+            para solicitar una atención.
+          </p>
+        </div>
+        <div className="cp-qr__header-actions">
+          {botonTema}
+          <div className="cp-qr__steps-label" aria-label="Formulario de cuatro pasos">
+            <span className="cp-qr__steps-icon" aria-hidden="true">✓</span>
+            <span><strong>4 pasos</strong><small>Formulario de inscripción</small></span>
+          </div>
+        </div>
+      </header>
 
-      <Form onSubmit={handleSubmit}>
-        <Card className={cardClass}>
-          <Card.Header className={headerClass}>1. Datos Personales</Card.Header>
-          <Card.Body className="p-4">
-            <Row className="g-3">
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">RUT *</Form.Label><Form.Control type="text" name="rut" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Nombre *</Form.Label><Form.Control type="text" name="nombre" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Apellido Paterno *</Form.Label><Form.Control type="text" name="apellidoPaterno" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Apellido Materno *</Form.Label><Form.Control type="text" name="apellidoMaterno" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Teléfono *</Form.Label><Form.Control type="tel" name="telefono" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Correo Electrónico *</Form.Label><Form.Control type="email" name="correo" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Comuna *</Form.Label><Form.Control type="text" name="comuna" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Sector *</Form.Label><Form.Control type="text" name="sector" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-            </Row>
-          </Card.Body>
-        </Card>
+      {error && (
+        <Alert variant="danger" role="alert" dismissible onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
 
-        <Card className={cardClass}>
-          <Card.Header className={headerClass}>2. Datos del Equipo y Servicio</Card.Header>
-          <Card.Body className="p-4">
-            <Row className="g-3">
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Marca del Equipo *</Form.Label><Form.Control type="text" name="marcaEquipo" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={6}><Form.Group><Form.Label className="fw-bold">Modelo *</Form.Label><Form.Control type="text" name="modeloEquipo" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="fw-bold">Número de Serie (Opcional)</Form.Label>
-                  <Form.Control type="text" name="numeroSerie" onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''} />
-                  <Form.Text className={modoOscuro ? 'text-light fst-italic' : 'text-muted fst-italic'}>Nota: Si no lo conoce, déjelo en blanco.</Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={12}><Form.Group><Form.Label className="fw-bold">¿Qué problema presenta su equipo? *</Form.Label><Form.Control as="textarea" rows={3} name="diagnosticoPropietario" required onChange={handleChange} className={modoOscuro ? 'bg-dark text-light' : ''}/></Form.Group></Col>
-              
-              <Col md={12}>
-                <Form.Label className="fw-bold d-block">Servicio Requerido *</Form.Label>
-                <div className="d-flex flex-wrap gap-4 mt-2">
-                  
-                  <Form.Check 
-                    type="checkbox" 
-                    name="formateo" 
-                    onChange={handleChange} 
-                    label={
-                      <span className="d-flex align-items-center">
-                        Formateo
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Reinstalación del sistema desde cero. Elimina virus graves. <strong>Borra todos los archivos</strong> (requiere respaldo previo).</Tooltip>}>
-                          <span className="ms-2 badge bg-secondary rounded-circle" style={{ cursor: 'help', fontSize: '0.65em' }}>?</span>
-                        </OverlayTrigger>
-                      </span>
-                    } 
-                  />
-                  
-                  <Form.Check 
-                    type="checkbox" 
-                    name="mantencionLogica" 
-                    onChange={handleChange} 
-                    label={
-                      <span className="d-flex align-items-center">
-                        Mantención Lógica
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Limpieza de software, eliminación de virus ligeros y optimización. <strong>Tus archivos no se borran.</strong></Tooltip>}>
-                          <span className="ms-2 badge bg-secondary rounded-circle" style={{ cursor: 'help', fontSize: '0.65em' }}>?</span>
-                        </OverlayTrigger>
-                      </span>
-                    } 
-                  />
-                  
-                  <Form.Check 
-                    type="checkbox" 
-                    name="mantencionFisica" 
-                    onChange={handleChange} 
-                    label={
-                      <span className="d-flex align-items-center">
-                        Mantención Física
-                        <OverlayTrigger placement="top" overlay={<Tooltip>Limpieza interna de polvo y cambio de pasta térmica. Ideal si tu equipo <strong>se calienta o hace mucho ruido</strong>.</Tooltip>}>
-                          <span className="ms-2 badge bg-secondary rounded-circle" style={{ cursor: 'help', fontSize: '0.65em' }}>?</span>
-                        </OverlayTrigger>
-                      </span>
-                    } 
-                  />
+      <Form onSubmit={handleSubmit} className="cp-qr__form">
+        <section className="cp-qr__section" aria-labelledby="qr-paso-jornada">
+          <div className="cp-qr__section-header">
+            <span className="cp-qr__step-number" aria-hidden="true">01</span>
+            <div>
+              <h2 id="qr-paso-jornada">Jornada de atención</h2>
+              <p>Elige la fecha en que llevarás tu equipo a la clínica.</p>
+            </div>
+          </div>
+          <div className="cp-qr__section-body">
+            <Form.Group controlId="qr-jornada">
+              <Form.Label>Selecciona la jornada <span aria-hidden="true">*</span></Form.Label>
+              <Form.Select
+                required
+                value={jornadaId}
+                onChange={(e) => setJornadaId(e.target.value)}
+              >
+                <option value="">Seleccione una jornada...</option>
+                {jornadasDisponibles.map((j) => (
+                  <option key={j.id} value={j.id}>
+                    {j.periodo} — {j.fecha}{' '}
+                    ({etiquetasEstadoJornada[obtenerEstadoJornada(j)]})
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            {!jornadasDisponibles.length && (
+              <Alert variant="warning" className="mt-3 mb-0">
+                No hay jornadas disponibles para preinscripción.
+              </Alert>
+            )}
+          </div>
+        </section>
 
-                </div>
-              </Col>
+        <section className="cp-qr__section" aria-labelledby="qr-paso-propietario">
+          <div className="cp-qr__section-header">
+            <span className="cp-qr__step-number" aria-hidden="true">02</span>
+            <div>
+              <h2 id="qr-paso-propietario">Datos del propietario</h2>
+              <p>Ingresa la información de contacto de quien llevará el equipo.</p>
+            </div>
+          </div>
+          <div className="cp-qr__section-body">
+            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
+          </div>
+        </section>
 
-            </Row>
-          </Card.Body>
-        </Card>
+        <div className="cp-qr__embedded" aria-label="Paso 3: Datos del dispositivo">
+          <DatosEquipo
+            formData={formData}
+            onChange={handleChange}
+            modoOscuro={modoOscuro}
+            numeroPaso="03"
+          />
+        </div>
 
-        {/* 3. TÉRMINOS LEGALES */}
-        <Card className={cardClass} border="danger">
-          <Card.Header className={`fw-bold py-3 text-white`} style={{ backgroundColor: '#cc0000' }}>
-            3. Términos y Condiciones Legales
-          </Card.Header>
-          <Card.Body className="p-4">
-            <Alert variant={modoOscuro ? "dark" : "warning"} className={`mb-0 border-0 shadow-sm ${modoOscuro ? 'border-secondary text-light' : ''}`}>
-              <Form.Check 
-                type="checkbox" 
-                id="aceptaTerminos" 
-                name="aceptaTerminos" 
-                required 
-                onChange={handleChange}
-                label={
-                  <span className="ms-1">
-                    Tomo conocimiento y acepto las condiciones del servicio. Autorizo el tratamiento de mis datos personales en conformidad a la <strong>Ley N° 21.719</strong> y eximo expresamente a <strong>Clínica del PC</strong> y a <strong>INACAP</strong> de cualquier responsabilidad frente a la eventual pérdida de información, programas o datos no respaldados por mí de forma previa a la entrega del equipo.
-                  </span>
-                }
-              />
-            </Alert>
-          </Card.Body>
-        </Card>
+        <div className="cp-qr__embedded" aria-label="Paso 4: Consentimiento">
+          <TerminosLegales
+            formData={formData}
+            onChange={handleChange}
+            modoOscuro={modoOscuro}
+            numeroPaso="04"
+          />
+        </div>
 
-        <div className="d-flex justify-content-end mb-5">
-          <Button type="submit" size="lg" variant={modoOscuro ? "light" : "danger"} className="fw-bold px-5">
-            Registrar Equipo
+        <div className="cp-qr__submit-bar">
+          <div>
+            <strong>Antes de finalizar</strong>
+            <p>Revisa tus datos, el servicio solicitado y las condiciones de atención.</p>
+          </div>
+          <Button
+            type="submit"
+            variant="danger"
+            size="lg"
+            className="cp-qr__primary"
+            disabled={!jornadasDisponibles.length}
+          >
+            Registrar preinscripción
           </Button>
         </div>
       </Form>
-    </>
+    </div>
   );
 }

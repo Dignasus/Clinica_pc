@@ -1,0 +1,9 @@
+@import "tailwindcss/theme" layer(theme);
+@import "tailwindcss/utilities" layer(utilities);
+
+@theme {
+  --color-inacap-red: #E30513;
+  --color-inacap-gray: #5A5B5E;
+  --color-inacap-white: #FFFFFF;
+  --color-inacap-black: #000000;
+}
