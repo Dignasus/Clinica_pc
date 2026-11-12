@@ -1,60 +1,35 @@
 
 import logoInacap from '../../assets/logo-inacap.png';
 
-
 function EnlaceMenu({ id, texto, vistaActiva, onSeleccionar }) {
   const activo = vistaActiva === id;
 
   return (
-    <button
-      type="button"
-      onClick={() => onSeleccionar(id)}
+    <button type="button" onClick={() => onSeleccionar(id)}
       aria-current={activo ? 'page' : undefined}
-      className={`
-        block w-full cursor-pointer appearance-none
-        rounded-lg border-0 px-4 py-2.5
-        text-left text-sm text-white
-        transition-colors duration-200
-        focus-visible:outline-2
-        focus-visible:outline-offset-2
-        focus-visible:outline-white
-        ${
-          activo
-            ? 'bg-inacap-red font-semibold'
-            : 'bg-transparent hover:bg-inacap-red/90 hover:text-white'
-        }
-      `}
-    >
+      className={`block w-full cursor-pointer appearance-none rounded-lg border-0
+        px-4 py-2.5 text-left text-sm text-white transition-colors duration-200
+        focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white
+        ${activo ? 'bg-inacap-red font-semibold'
+          : 'bg-transparent hover:bg-inacap-red/90 hover:text-white'}`}>
       {texto}
     </button>
   );
 }
 
-
 export default function Sidebar({
-  nombreUsuario,
-  vistaActiva,
-  permisos,
-  onSeleccionar,
+  nombreUsuario, vistaActiva, permisos, onSeleccionar,
 }) {
   const enlace = (id, texto) => (
-    <EnlaceMenu
-      key={id}
-      id={id}
-      texto={texto}
-      vistaActiva={vistaActiva}
-      onSeleccionar={onSeleccionar}
-    />
+    <EnlaceMenu key={id} id={id} texto={texto}
+      vistaActiva={vistaActiva} onSeleccionar={onSeleccionar} />
   );
 
   return (
     <div className="flex min-h-full flex-col bg-[#333333] text-white">
       <div className="border-b-4 border-inacap-red bg-white px-5 py-6 text-center">
-        <img
-          src={logoInacap}
-          alt="INACAP"
-          className="mx-auto h-auto w-full max-w-[170px] object-contain"
-        />
+        <img src={logoInacap} alt="INACAP"
+          className="mx-auto h-auto w-full max-w-[170px] object-contain" />
         <p className="mt-3 mb-0 text-sm font-semibold text-inacap-red">
           {nombreUsuario}
         </p>
@@ -67,20 +42,14 @@ export default function Sidebar({
           Fases del servicio
         </p>
 
-        {permisos.inscripcion &&
-          enlace('inscripcion', '1. Inscripción (QR)')}
+        {permisos.recepcion && enlace('recepcion', '1. Recepción de Equipos')}
 
-        {permisos.encuesta &&
-          enlace('encuesta', '★ Evaluar Servicio')}
+        {permisos.registroPresencial &&
+          enlace('registroPresencial', '2. Registrar sin QR')}
 
-        {permisos.recepcion &&
-          enlace('recepcion', '2. Recepción de Equipos')}
+        {permisos.tecnico && enlace('tecnico', '3. Panel Técnico')}
 
-        {permisos.tecnico &&
-          enlace('tecnico', '3. Panel Técnico')}
-
-        {permisos.historial &&
-          enlace('historial', '4. Historial y Consultas')}
+        {permisos.historial && enlace('historial', '4. Historial y Consultas')}
 
         {permisos.parametros && (
           <>

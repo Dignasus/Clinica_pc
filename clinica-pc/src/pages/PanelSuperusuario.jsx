@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Offcanvas } from 'react-bootstrap';
 
@@ -8,18 +8,16 @@ import { useClinica } from '../context/clinicaContextBase.js';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
 import InicioDashboard from '../components/InicioDashboard';
-import InscripcionQR from '../components/InscripcionQR';
 import RecepcionEquipos from '../components/RecepcionEquipos';
+import RegistroPresencial from '../components/recepcion/RegistroPresencial';
 import PanelTecnico from '../components/PanelTecnico';
 import HistorialConsultas from '../components/HistorialConsultas';
 import ParametrosMantenedores from '../components/ParametrosMantenedores';
-import EncuestaSatisfaccion from '../components/EncuestaSatisfaccion';
 
 export default function PanelSuperusuario() {
   const navigate = useNavigate();
   const { datos } = useClinica();
 
-  // Sesión del usuario
   const [sesion] = useState(() => ({
     rol: sessionStorage.getItem('userRol') || '',
     nombre: sessionStorage.getItem('userNombre') || '',
@@ -28,26 +26,22 @@ export default function PanelSuperusuario() {
   const rolUsuario = sesion.rol;
   const nombreUsuario = sesion.nombre;
 
-  // Navegación y apariencia
-  const [vistaActiva, setVistaActiva] = useState(() =>
-    sesion.rol === 'cliente' ? 'inscripcion' : 'inicio'
-  );
+  const [vistaActiva, setVistaActiva] = useState('inicio');
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState('');
   const [modoOscuro, setModoOscuro] = useState(false);
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState('');
+  const [registroReciente, setRegistroReciente] = useState(null);
 
-  // Períodos obtenidos de las jornadas, sin duplicados.
-  // Ordenados desde la jornada más reciente.
+  // Períodos obtenidos de las jornadas registradas.
   const periodosDisponibles = [
     ...new Set(
       [...datos.jornadas]
         .sort((a, b) => b.fecha.localeCompare(a.fecha))
-        .map((jornada) => jornada.periodo)
+        .map((j) => j.periodo)
         .filter(Boolean)
     ),
   ];
 
-  // Selección válida o período más reciente por defecto.
   const periodoGlobal =
     periodoSeleccionado === 'Todos' ||
     periodosDisponibles.includes(periodoSeleccionado)
@@ -56,9 +50,12 @@ export default function PanelSuperusuario() {
 
   const opcionesPeriodo = ['Todos', ...periodosDisponibles];
 
-  // Verificación básica de sesión del prototipo
+  // Los propietarios usan el portal público.
   useEffect(() => {
     if (!rolUsuario) navigate('/', { replace: true });
+    else if (rolUsuario === 'cliente') {
+      navigate('/inscripcion', { replace: true });
+    }
   }, [rolUsuario, navigate]);
 
   const handleLogout = () => {
@@ -67,24 +64,27 @@ export default function PanelSuperusuario() {
   };
 
   const cambiarVista = (vista) => {
+    setRegistroReciente(null);
     setVistaActiva(vista);
     setMenuMovilAbierto(false);
   };
 
-  const toggleTema = () => setModoOscuro((actual) => !actual);
+  // Después del registro presencial, abrir directamente esa atención.
+  const registroCompletado = ({ atencionId, rut }) => {
+    setRegistroReciente({ atencionId, rut });
+    setVistaActiva('recepcion');
+    setMenuMovilAbierto(false);
+  };
 
-  // Permisos de visualización del prototipo
   const permisos = {
     inicio: ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario),
-    inscripcion: ['superusuario', 'cliente', 'recepcionista'].includes(rolUsuario),
     recepcion: ['superusuario', 'recepcionista'].includes(rolUsuario),
+    registroPresencial: ['superusuario', 'recepcionista'].includes(rolUsuario),
     tecnico: ['superusuario', 'tecnico'].includes(rolUsuario),
     historial: ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario),
     parametros: rolUsuario === 'superusuario',
-    encuesta: ['superusuario', 'cliente'].includes(rolUsuario),
   };
 
-  // Renderizado de los módulos
   const renderizarContenido = () => {
     if (!permisos[vistaActiva]) {
       return <div>No tienes acceso a esta sección.</div>;
@@ -93,46 +93,39 @@ export default function PanelSuperusuario() {
     switch (vistaActiva) {
       case 'inicio':
         return (
-          <InicioDashboard
-            modoOscuro={modoOscuro}
-            rolUsuario={rolUsuario}
-            nombreUsuario={nombreUsuario}
-            periodoGlobal={periodoGlobal}
-          />
+          <InicioDashboard modoOscuro={modoOscuro}
+            rolUsuario={rolUsuario} nombreUsuario={nombreUsuario}
+            periodoGlobal={periodoGlobal} />
         );
-
-      case 'inscripcion':
-        return <InscripcionQR modoOscuro={modoOscuro} />;
 
       case 'recepcion':
         return (
           <RecepcionEquipos
+            key={registroReciente?.atencionId || 'busqueda'}
             modoOscuro={modoOscuro}
             periodoGlobal={periodoGlobal}
+            seleccionInicial={registroReciente}
+          />
+        );
+
+      case 'registroPresencial':
+        return (
+          <RegistroPresencial
+            modoOscuro={modoOscuro}
+            periodoGlobal={periodoGlobal}
+            onCancelar={() => cambiarVista('recepcion')}
+            onRegistrado={registroCompletado}
           />
         );
 
       case 'tecnico':
-        return (
-          <PanelTecnico
-            modoOscuro={modoOscuro}
-            periodoGlobal={periodoGlobal}
-          />
-        );
+        return <PanelTecnico modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
 
       case 'historial':
-        return (
-          <HistorialConsultas
-            modoOscuro={modoOscuro}
-            periodoGlobal={periodoGlobal}
-          />
-        );
+        return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
 
       case 'parametros':
         return <ParametrosMantenedores modoOscuro={modoOscuro} />;
-
-      case 'encuesta':
-        return <EncuestaSatisfaccion modoOscuro={modoOscuro} />;
 
       default:
         return <div>Seleccione una fase.</div>;
@@ -140,25 +133,19 @@ export default function PanelSuperusuario() {
   };
 
   const propiedadesSidebar = {
-    nombreUsuario,
-    vistaActiva,
-    permisos,
-    onSeleccionar: cambiarVista,
+    nombreUsuario, vistaActiva, permisos, onSeleccionar: cambiarVista,
   };
 
   return (
-    <div
-      data-bs-theme={modoOscuro ? 'dark' : 'light'}
+    <div data-bs-theme={modoOscuro ? 'dark' : 'light'}
       className={`flex min-h-screen ${
         modoOscuro ? 'bg-[#121212] text-white' : 'bg-[#f4f4f4] text-gray-900'
-      }`}
-    >
-      {/* Navegación de escritorio */}
+      }`}>
+
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto md:block">
         <Sidebar {...propiedadesSidebar} />
       </aside>
 
-      {/* Contenido principal */}
       <div className="flex min-w-0 flex-1 flex-col">
         <Header
           rolUsuario={rolUsuario}
@@ -166,7 +153,7 @@ export default function PanelSuperusuario() {
           periodosDisponibles={opcionesPeriodo}
           onPeriodoChange={setPeriodoSeleccionado}
           modoOscuro={modoOscuro}
-          onToggleTema={toggleTema}
+          onToggleTema={() => setModoOscuro((actual) => !actual)}
           onSalir={handleLogout}
           onAbrirMenu={() => setMenuMovilAbierto(true)}
           menuMovilAbierto={menuMovilAbierto}
@@ -177,19 +164,13 @@ export default function PanelSuperusuario() {
         </main>
       </div>
 
-      {/* Navegación móvil */}
-      <Offcanvas
-        show={menuMovilAbierto}
+      <Offcanvas show={menuMovilAbierto}
         onHide={() => setMenuMovilAbierto(false)}
-        placement="start"
-        backdrop
-        scroll={false}
-        keyboard
-        restoreFocus
+        placement="start" backdrop scroll={false} keyboard restoreFocus
         aria-labelledby="titulo-menu-movil"
         data-bs-theme="dark"
-        style={{ '--bs-offcanvas-width': 'min(18rem, 85vw)' }}
-      >
+        style={{ '--bs-offcanvas-width': 'min(18rem, 85vw)' }}>
+
         <Offcanvas.Header closeButton className="bg-[#333333] text-white">
           <Offcanvas.Title id="titulo-menu-movil">
             Menú de navegación

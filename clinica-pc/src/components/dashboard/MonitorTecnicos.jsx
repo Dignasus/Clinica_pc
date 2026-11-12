@@ -24,7 +24,7 @@ export default function MonitorTecnicos({ modoOscuro, tecnicos }) {
 
       <div role="list" className="mt-6 grid grid-cols-1 gap-3 lg:grid-cols-3">
         {tecnicos.map(({ nombre, estado }) => {
-          const disponible = estado === 'Disponible';
+          const disponible = ['Disponible', 'Sin tareas registradas'].includes(estado);
 
           return (
             <div
