@@ -3,18 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import logoInacap from '../assets/logo-inacap.png';
 import fotoCampus from '../assets/login-campus.jpg';
 import './Login.css';
-
-const usuariosMock = {
-  admin: { rol: 'superusuario', nombre: 'Matías Carrasco' },
-  recepcion: { rol: 'recepcionista', nombre: 'Camila Rojas' },
-  tecnico: { rol: 'tecnico', nombre: 'Cristian' },
-  cliente: { rol: 'cliente', nombre: 'Cliente Invitado' },
-};
+import { useClinica } from '../context/clinicaContextBase.js';
 
 export default function Login() {
   const [credenciales, setCredenciales] = useState({ usuario: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { datos } = useClinica();
 
   const handleChange = ({ target: { name, value } }) => {
     setCredenciales((prev) => ({ ...prev, [name]: value }));
@@ -30,13 +25,23 @@ export default function Login() {
       return;
     }
 
-    const perfil = usuariosMock[usuarioIngresado];
-    if (!perfil || credenciales.password !== '123') {
+    // La cuenta pública no requiere una sesión de personal.
+    if (usuarioIngresado === 'cliente' && credenciales.password === '123') {
+      navigate('/inscripcion', { replace: true });
+      return;
+    }
+
+    // Solo simulación académica: NO usar contraseñas compartidas en producción.
+    const perfil = datos.usuarios.find((u) =>
+      u.usuario?.toLowerCase() === usuarioIngresado);
+    if (!perfil || credenciales.password !== '123' ||
+      !(datos.roles || []).some((r) => r.id === perfil.rol && r.permisos?.length)) {
       setError('Credenciales inválidas. Revise su usuario y contraseña.');
       return;
     }
 
     sessionStorage.setItem('authToken', 'sesion-activa');
+    sessionStorage.setItem('userId', perfil.id);
     sessionStorage.setItem('userRol', perfil.rol);
     sessionStorage.setItem('userNombre', perfil.nombre);
     navigate('/panel', { replace: true });
