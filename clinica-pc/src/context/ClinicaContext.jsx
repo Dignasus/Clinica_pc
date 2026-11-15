@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { datosIniciales } from '../data/datosIniciales.js';
 import { MODULOS, rolesBase, tienePermiso } from '../data/roles.js';
+import { programarEncuesta, puedeCerrarTicket } from '../utils/seguimiento.js';
 import { ClinicaContext } from './clinicaContextBase.js';
 import { fechaLocal, obtenerEstadoJornada } from '../utils/jornadas.js';
 import { encontrarRegionDeComuna } from '../data/regionesChile.js';
@@ -12,7 +13,8 @@ import {
 
 const STORAGE_KEY = 'clinica-pc-demo-v1';
 const BACKUP_KEY = `${STORAGE_KEY}-backup`;
-const estadosFinales = ['entregado', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
+// La jornada presencial puede finalizar aunque los tickets entregados sigan en seguimiento.
+const estadosSinAtencionPresencial = ['entregado', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
 
 function cargarDatos() {
   try {
@@ -246,11 +248,12 @@ function clinicaReducer(state, action) {
     }
 
     case 'CONFIRMAR_ENTREGA': {
-      const { atencionId, entrega } = action.payload;
+      const { atencionId, entrega, token } = action.payload;
       if (
         !entrega.pruebaConPropietario ||
         !entrega.conformidad ||
-        !String(entrega.recibidoPor ?? '').trim()
+        !String(entrega.recibidoPor ?? '').trim() ||
+        !token
       )
         return state;
       return {
@@ -261,9 +264,126 @@ function clinicaReducer(state, action) {
                 ...a,
                 entrega: { ...entrega, fecha: new Date().toISOString() },
                 estado: 'entregado',
+                seguimiento: programarEncuesta(new Date().toISOString(), token),
               }
             : a,
         ),
+      };
+    }
+
+    case 'INICIAR_SEGUIMIENTO': {
+      // Recuperar atenciones entregadas con versiones anteriores del prototipo.
+      const { atencionId, usuarioId, token } = action.payload || {};
+      const operador = state.usuarios.find((u) => u.id === usuarioId);
+      if (!operador || !tienePermiso(state, operador.rol, 'parametros') || !token) return state;
+      return {
+        ...state,
+        atenciones: state.atenciones.map((a) =>
+          a.id === atencionId && a.estado === 'entregado' && !a.seguimiento && !a.cierreTicket
+            ? { ...a, seguimiento: programarEncuesta(a.entrega?.fecha || new Date().toISOString(), token) }
+            : a),
+      };
+    }
+
+    case 'SIMULAR_ENVIO_ENCUESTA': {
+      // El frontend NO manda emails: marca un envío de prueba para verificar el recorrido local.
+      const { atencionId, usuarioId } = action.payload || {};
+      const operador = state.usuarios.find((u) => u.id === usuarioId);
+      if (!operador || !tienePermiso(state, operador.rol, 'parametros')) return state;
+      return {
+        ...state,
+        atenciones: state.atenciones.map((a) =>
+          a.id === atencionId && a.estado === 'entregado' &&
+          a.seguimiento?.estado === 'pendiente_envio' && !a.cierreTicket
+            ? {
+                ...a,
+                seguimiento: {
+                  ...a.seguimiento,
+                  estado: 'enviada_demo',
+                  fechaSimulacion: new Date().toISOString(),
+                  usuarioSimuladorId: usuarioId,
+                },
+              }
+            : a),
+      };
+    }
+
+    case 'RESPONDER_ENCUESTA': {
+      const { token, calificacion, funcionamiento, comentarios } = action.payload || {};
+      const nota = Number(calificacion);
+      const detalle = String(comentarios || '').trim().slice(0, 2000);
+      if (!token || !Number.isInteger(nota) || nota < 1 || nota > 5 ||
+        !['bien', 'parcial', 'mal'].includes(funcionamiento) ||
+        (funcionamiento !== 'bien' && !detalle)) return state;
+      return {
+        ...state,
+        atenciones: state.atenciones.map((a) =>
+          a.estado === 'entregado' &&
+          a.seguimiento?.token === token &&
+          a.seguimiento?.estado === 'enviada_demo' && !a.seguimiento.respuesta && !a.cierreTicket
+            ? {
+                ...a,
+                seguimiento: {
+                  ...a.seguimiento,
+                  estado: funcionamiento === 'bien' ? 'respondida' : 'incidencia',
+                  respuesta: {
+                    calificacion: nota,
+                    funcionamiento,
+                    comentarios: detalle,
+                    fecha: new Date().toISOString(),
+                  },
+                },
+              }
+            : a),
+      };
+    }
+
+    case 'RESOLVER_INCIDENCIA': {
+      const { atencionId, usuarioId, observaciones } = action.payload || {};
+      const operador = state.usuarios.find((u) => u.id === usuarioId);
+      const nota = String(observaciones || '').trim().slice(0, 2000);
+      if (!operador || !tienePermiso(state, operador.rol, 'parametros') || !nota) return state;
+      return {
+        ...state,
+        atenciones: state.atenciones.map((a) =>
+          a.id === atencionId && a.estado === 'entregado' &&
+          a.seguimiento?.respuesta?.funcionamiento !== 'bien' &&
+          a.seguimiento?.respuesta && !a.seguimiento?.resolucion && !a.cierreTicket
+            ? {
+                ...a,
+                seguimiento: {
+                  ...a.seguimiento,
+                  estado: 'incidencia_resuelta',
+                  resolucion: {
+                    observaciones: nota,
+                    fecha: new Date().toISOString(),
+                    usuarioId,
+                  },
+                },
+              }
+            : a),
+      };
+    }
+
+    case 'CERRAR_TICKET': {
+      const { atencionId, usuarioId } = action.payload || {};
+      const operador = state.usuarios.find((u) => u.id === usuarioId);
+      if (!operador || !tienePermiso(state, operador.rol, 'parametros')) return state;
+      return {
+        ...state,
+        atenciones: state.atenciones.map((a) =>
+          a.id === atencionId && puedeCerrarTicket(a)
+            ? {
+                ...a,
+                cierreTicket: {
+                  fecha: new Date().toISOString(),
+                  usuarioId,
+                  motivo: a.seguimiento.respuesta.funcionamiento === 'bien'
+                    ? 'Encuesta satisfactoria revisada'
+                    : 'Incidencia revisada y resolución registrada',
+                },
+              }
+            : a),
       };
     }
 
@@ -327,7 +447,7 @@ function clinicaReducer(state, action) {
       )
         return state;
       const abiertas = state.atenciones.some(
-        (a) => a.jornadaId === jornada.id && !estadosFinales.includes(a.estado),
+        (a) => a.jornadaId === jornada.id && !estadosSinAtencionPresencial.includes(a.estado),
       );
       if (abiertas) return state;
       return {
