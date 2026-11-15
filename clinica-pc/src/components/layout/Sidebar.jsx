@@ -103,7 +103,7 @@ function TituloSeccion({ children }) {
   return <p className="pc-sidebar__section-title">{children}</p>;
 }
 
-export default function Sidebar({ nombreUsuario, rolUsuario, vistaActiva, permisos, onSeleccionar, modoOscuro = false }) {
+export default function Sidebar({ nombreUsuario, rolUsuario, nombreRol, vistaActiva, permisos, onSeleccionar, modoOscuro = false }) {
   const enlace = (id, texto) => (
     <EnlaceMenu
       key={id}
@@ -132,7 +132,7 @@ export default function Sidebar({ nombreUsuario, rolUsuario, vistaActiva, permis
         <span className="pc-sidebar__avatar">{obtenerIniciales(nombreUsuario)}</span>
         <div className="pc-sidebar__user-text">
           <strong title={nombreUsuario}>{nombreUsuario || 'Usuario'}</strong>
-          <small>{nombresRol[rolUsuario] || 'Personal autorizado'}</small>
+          <small>{nombreRol || nombresRol[rolUsuario] || 'Personal autorizado'}</small>
         </div>
       </div>
 
