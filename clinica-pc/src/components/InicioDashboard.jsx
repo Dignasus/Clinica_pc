@@ -1,5 +1,6 @@
 import { Alert } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
+import { personalTecnico } from '../data/roles.js';
 import DashboardMetricCard from './dashboard/DashboardMetricCard.jsx';
 import MonitorTecnicos from './dashboard/MonitorTecnicos.jsx';
 import OcupacionTaller from './dashboard/OcupacionTaller.jsx';
@@ -10,7 +11,7 @@ const normalizar = (valor) => String(valor || '').trim().toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export default function InicioDashboard({
-  modoOscuro, rolUsuario, nombreUsuario, periodoGlobal = 'Todos',
+  modoOscuro, rolUsuario, nombreUsuario, permisos = {}, usuarioId = '', periodoGlobal = 'Todos',
 }) {
   const { datos } = useClinica();
 
@@ -25,13 +26,11 @@ export default function InicioDashboard({
   const pendientesEntrega = atenciones.filter((a) => ['listo_entrega', 'contactado'].includes(a.estado)).length;
   const entregados = atenciones.filter((a) => a.estado === 'entregado').length;
 
-  const tecnicoActual = datos.usuarios.find((u) => u.rol === 'tecnico' &&
-    (normalizar(u.nombre) === normalizar(nombreUsuario) ||
-      normalizar(u.id) === normalizar(nombreUsuario)));
+  const tecnicoActual = personalTecnico(datos).find((u) => u.id === usuarioId);
   const misTareas = atenciones.filter((a) => estadosTaller.includes(a.estado) &&
     a.tecnicoIds?.includes(tecnicoActual?.id)).length;
 
-  const tecnicos = datos.usuarios.filter((u) => u.rol === 'tecnico').map((tecnico) => {
+  const tecnicos = personalTecnico(datos).map((tecnico) => {
     const tareas = atenciones.filter((a) => estadosTaller.includes(a.estado) &&
       a.tecnicoIds?.includes(tecnico.id));
     const enProceso = tareas.filter((a) => a.estado === 'en_proceso').length;
@@ -42,10 +41,10 @@ export default function InicioDashboard({
     };
   });
 
-  const puedeVerEquipos = ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario);
-  const puedeVerPreinscripciones = ['superusuario', 'recepcionista'].includes(rolUsuario);
-  const puedeVerTareas = ['superusuario', 'tecnico'].includes(rolUsuario);
-  const puedeVerTecnicos = ['superusuario', 'recepcionista'].includes(rolUsuario);
+  const puedeVerEquipos = permisos.inicio;
+  const puedeVerPreinscripciones = permisos.recepcion;
+  const puedeVerTareas = permisos.tecnico;
+  const puedeVerTecnicos = permisos.recepcion;
   const cantidadMetricas = Number(puedeVerEquipos) * 3 +
     Number(puedeVerPreinscripciones) + Number(puedeVerTareas);
 
@@ -74,7 +73,7 @@ export default function InicioDashboard({
           No hay atenciones registradas para el período seleccionado.
         </Alert>
       )}
-      {rolUsuario === 'tecnico' && !tecnicoActual && (
+      {permisos.tecnico && !permisos.parametros && !tecnicoActual && (
         <Alert variant="warning" className="pc-dashboard__alerta mb-0">
           La sesión no coincide con un técnico registrado.
         </Alert>
@@ -97,7 +96,7 @@ export default function InicioDashboard({
             )}
             {puedeVerTareas && (
               <DashboardMetricCard modoOscuro={modoOscuro}
-                titulo={rolUsuario === 'tecnico' ? 'Mis tareas asignadas' : 'Trabajos en proceso'}
+                titulo={!permisos.parametros ? 'Mis tareas asignadas' : 'Trabajos en proceso'}
                 valor={rolUsuario === 'tecnico' ? misTareas : trabajosEnProceso}
                 icono="herramienta" descripcion="Atenciones en taller" tono="azul" />
             )}
