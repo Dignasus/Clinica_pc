@@ -126,7 +126,7 @@ export default function SeguimientoTicket({ atencion, puedeGestionar = false, us
             </div>
           )}
 
-          {seguimiento?.estado === 'enviada_demo' && !respuesta && (
+          {puedeGestionar && seguimiento?.estado === 'enviada_demo' && !respuesta && (
             <div>
               <Button variant="outline-secondary" onClick={() => navigate(`/encuesta/${seguimiento.token}`)}>
                 Abrir encuesta de prueba
