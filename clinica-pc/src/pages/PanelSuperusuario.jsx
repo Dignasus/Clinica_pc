@@ -24,6 +24,7 @@ export default function PanelSuperusuario() {
   const nombreUsuario = usuario?.nombre || '';
   const permisos = Object.fromEntries(MODULOS.map((m) =>
     [m.id, tienePermiso(datos, rolUsuario, m.id)]));
+  const tieneAcceso = Object.values(permisos).some(Boolean);
 
   const [vistaActiva, setVistaActiva] = useState('inicio');
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('');
@@ -49,11 +50,11 @@ export default function PanelSuperusuario() {
   const opcionesPeriodo = ['Todos', ...periodosDisponibles];
 
   useEffect(() => {
-    if (!usuario || !Object.values(permisos).some(Boolean)) {
+    if (!usuario || !tieneAcceso) {
       sessionStorage.removeItem('authToken');
       navigate('/', { replace: true });
     }
-  }, [usuario, rolUsuario, navigate]);
+  }, [usuario, tieneAcceso, navigate]);
 
   const handleLogout = () => {
     sessionStorage.clear();
