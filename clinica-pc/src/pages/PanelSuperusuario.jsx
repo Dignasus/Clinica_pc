@@ -12,18 +12,18 @@ import RegistroPresencial from '../components/recepcion/RegistroPresencial';
 import PanelTecnico from '../components/PanelTecnico';
 import HistorialConsultas from '../components/HistorialConsultas';
 import ParametrosMantenedores from '../components/ParametrosMantenedores';
+import { MODULOS, nombreDeRol, tienePermiso } from '../data/roles.js';
 
 export default function PanelSuperusuario() {
   const navigate = useNavigate();
   const { datos } = useClinica();
 
-  const [sesion] = useState(() => ({
-    rol: sessionStorage.getItem('userRol') || '',
-    nombre: sessionStorage.getItem('userNombre') || '',
-  }));
-
-  const rolUsuario = sesion.rol;
-  const nombreUsuario = sesion.nombre;
+  const [idSesion] = useState(() => sessionStorage.getItem('userId') || '');
+  const usuario = datos.usuarios.find((u) => u.id === idSesion);
+  const rolUsuario = usuario?.rol || '';
+  const nombreUsuario = usuario?.nombre || '';
+  const permisos = Object.fromEntries(MODULOS.map((m) =>
+    [m.id, tienePermiso(datos, rolUsuario, m.id)]));
 
   const [vistaActiva, setVistaActiva] = useState('inicio');
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState('');
@@ -48,13 +48,12 @@ export default function PanelSuperusuario() {
 
   const opcionesPeriodo = ['Todos', ...periodosDisponibles];
 
-  // Los propietarios usan el portal público.
   useEffect(() => {
-    if (!rolUsuario) navigate('/', { replace: true });
-    else if (rolUsuario === 'cliente') {
-      navigate('/inscripcion', { replace: true });
+    if (!usuario || !Object.values(permisos).some(Boolean)) {
+      sessionStorage.removeItem('authToken');
+      navigate('/', { replace: true });
     }
-  }, [rolUsuario, navigate]);
+  }, [usuario, rolUsuario, navigate]);
 
   const handleLogout = () => {
     sessionStorage.clear();
@@ -74,15 +73,6 @@ export default function PanelSuperusuario() {
     setMenuMovilAbierto(false);
   };
 
-  const permisos = {
-    inicio: ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario),
-    recepcion: ['superusuario', 'recepcionista'].includes(rolUsuario),
-    registroPresencial: ['superusuario', 'recepcionista'].includes(rolUsuario),
-    tecnico: ['superusuario', 'tecnico'].includes(rolUsuario),
-    historial: ['superusuario', 'recepcionista', 'tecnico'].includes(rolUsuario),
-    parametros: rolUsuario === 'superusuario',
-  };
-
   const renderizarContenido = () => {
     if (!permisos[vistaActiva]) {
       return <div>No tienes acceso a esta sección.</div>;
@@ -95,6 +85,8 @@ export default function PanelSuperusuario() {
             modoOscuro={modoOscuro}
             rolUsuario={rolUsuario}
             nombreUsuario={nombreUsuario}
+            permisos={permisos}
+            usuarioId={idSesion}
             periodoGlobal={periodoGlobal}
           />
         );
@@ -120,7 +112,7 @@ export default function PanelSuperusuario() {
         );
 
       case 'tecnico':
-        return <PanelTecnico modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
+        return <PanelTecnico modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} usuarioId={idSesion} puedeVerTodos={permisos.parametros} />;
 
       case 'historial':
         return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} />;
@@ -136,6 +128,7 @@ export default function PanelSuperusuario() {
   const propiedadesSidebar = {
     nombreUsuario,
     rolUsuario,
+    nombreRol: nombreDeRol(datos, rolUsuario),
     modoOscuro,
     vistaActiva,
     permisos,
