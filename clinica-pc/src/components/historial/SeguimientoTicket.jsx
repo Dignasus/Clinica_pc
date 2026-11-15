@@ -61,9 +61,10 @@ export default function SeguimientoTicket({ atencion, puedeGestionar = false, us
           El seguimiento comenzará después de la entrega física.</Alert>
       ) : (
         <>
-          <Alert variant="info" className="mb-0">
-            El equipo ya fue entregado. Esto NO significa que el ticket esté cerrado.
-            La jornada presencial y el cierre del ticket son procesos diferentes.
+          <Alert variant={atencion.cierreTicket ? 'success' : 'info'} className="mb-0">
+            {atencion.cierreTicket
+              ? 'El equipo fue entregado y el ticket se cerró después de revisar la encuesta posterior.'
+              : 'El equipo ya fue entregado, pero el ticket sigue abierto. La jornada presencial y el cierre del ticket son procesos diferentes.'}
           </Alert>
 
           {seguimiento ? (
