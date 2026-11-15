@@ -41,7 +41,7 @@ export const etiquetasTicket = {
   en_atencion: 'En atención',
   pendiente_configurar: 'Seguimiento por preparar',
   pendiente_envio: 'Encuesta pendiente',
-  esperando_respuesta: 'Esperando respuesta',
+  esperando_respuesta: 'Encuesta habilitada (demo)',
   incidencia: 'Incidencia reportada',
   pendiente_cierre: 'Pendiente de revisión y cierre',
 };
