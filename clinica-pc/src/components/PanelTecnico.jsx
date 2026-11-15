@@ -13,8 +13,6 @@ const etiquetas = {
   asignado: 'Asignado', en_proceso: 'En proceso',
   listo_entrega: 'Listo para entrega', contactado: 'Propietario avisado',
 };
-const normalizar = (valor) => String(valor || '').trim().toLowerCase()
-  .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usuarioId = '', puedeVerTodos = false }) {
   const { datos, dispatch } = useClinica();
@@ -27,13 +25,12 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usua
   const [mensaje, setMensaje] = useState('');
 
   const usuarioActual = datos.usuarios.find((u) => u.id === usuarioId && tienePermiso(datos, u.rol, 'tecnico'));
-  const rol = usuarioActual?.rol;
   const jornadasIds = new Set(datos.jornadas.filter((j) =>
     periodoGlobal === 'Todos' || j.periodo === periodoGlobal).map((j) => j.id));
 
   const asignadas = datos.atenciones.filter((a) => estadosVisibles.includes(a.estado) &&
-    jornadasIds.has(a.jornadaId) && (rol === 'superusuario' ||
-      (rol === 'tecnico' && a.tecnicoIds?.includes(usuarioActual?.id))));
+    jornadasIds.has(a.jornadaId) && (puedeVerTodos ||
+      a.tecnicoIds?.includes(usuarioActual?.id)));
 
   const detalleDe = (a) => {
     const dispositivo = datos.dispositivos.find((d) => d.id === a.dispositivoId);
