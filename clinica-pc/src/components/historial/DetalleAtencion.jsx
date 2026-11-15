@@ -1,4 +1,5 @@
 import { Alert, Badge, Button, Card, Col, Row, Table } from 'react-bootstrap';
+import SeguimientoTicket from './SeguimientoTicket.jsx';
 
 const estados = {
   preinscrito: { nombre: 'Preinscrito', color: 'secondary' },
@@ -68,7 +69,7 @@ function Seccion({ numero, titulo, subtitulo, children }) {
   );
 }
 
-export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver }) {
+export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver, puedeGestionarSeguimiento = false, usuarioId = '' }) {
   const dispositivo = registro.dispositivo || {};
   const propietario = registro.propietario || {};
   const jornada = registro.jornada || {};
@@ -279,7 +280,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver 
       </Seccion>
 
       <Seccion numero={5} titulo="Contacto y entrega"
-        subtitulo="Comunicación con el propietario y cierre de la atención.">
+        subtitulo="Aviso y entrega física; el ticket sigue abierto para el seguimiento.">
         <Row className="g-4">
           <Col md={6}>
             <div className="hist-detail-group">
@@ -306,12 +307,18 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver 
         </Row>
         {registro.estado === 'entregado' && (
           <Alert variant="success" className="hist-note mt-3 mb-0">
-            Esta atención figura como entregada al propietario.
+            Este equipo fue entregado físicamente. Su ticket puede seguir abierto por la encuesta posterior.
           </Alert>
         )}
       </Seccion>
 
-      <Seccion numero={6} titulo="Relación con otras atenciones"
+      <Seccion numero={6} titulo="Seguimiento posterior y cierre del ticket"
+        subtitulo="Encuesta de satisfacción, incidencias y revisión administrativa.">
+        <SeguimientoTicket atencion={registro}
+          puedeGestionar={puedeGestionarSeguimiento} usuarioId={usuarioId} />
+      </Seccion>
+
+      <Seccion numero={7} titulo="Relación con otras atenciones"
         subtitulo="Visitas independientes que comparten el mismo dispositivo.">
         <p className="hist-section-explanation">
           Todas estas atenciones comparten el mismo identificador de dispositivo.
