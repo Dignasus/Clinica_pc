@@ -7,11 +7,9 @@ import OcupacionTaller from './dashboard/OcupacionTaller.jsx';
 import './dashboard/Dashboard.css';
 
 const estadosTaller = ['asignado', 'en_proceso', 'listo_entrega', 'contactado'];
-const normalizar = (valor) => String(valor || '').trim().toLowerCase()
-  .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export default function InicioDashboard({
-  modoOscuro, rolUsuario, nombreUsuario, permisos = {}, usuarioId = '', periodoGlobal = 'Todos',
+  modoOscuro, nombreUsuario, permisos = {}, usuarioId = '', periodoGlobal = 'Todos',
 }) {
   const { datos } = useClinica();
 
@@ -97,7 +95,7 @@ export default function InicioDashboard({
             {puedeVerTareas && (
               <DashboardMetricCard modoOscuro={modoOscuro}
                 titulo={!permisos.parametros ? 'Mis tareas asignadas' : 'Trabajos en proceso'}
-                valor={rolUsuario === 'tecnico' ? misTareas : trabajosEnProceso}
+                valor={!permisos.parametros ? misTareas : trabajosEnProceso}
                 icono="herramienta" descripcion="Atenciones en taller" tono="azul" />
             )}
             {puedeVerEquipos && (
