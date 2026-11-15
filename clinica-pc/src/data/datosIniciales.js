@@ -1,5 +1,7 @@
+import { rolesBase } from './roles.js';
 
 export const datosIniciales = {
+  roles: structuredClone(rolesBase),
   jornadas: [
     {
       id: 'JOR-001',
@@ -10,9 +12,9 @@ export const datosIniciales = {
   ],
 
   usuarios: [
-    { id: 'matias', nombre: 'Matías Carrasco', rol: 'tecnico' },
-    { id: 'cristian', nombre: 'Cristian', rol: 'tecnico' },
-    { id: 'camila', nombre: 'Camila', rol: 'tecnico' },
+    { id: 'matias', nombre: 'Matías Carrasco', usuario: 'admin', rol: 'superusuario' },
+    { id: 'cristian', nombre: 'Cristian', usuario: 'tecnico', rol: 'tecnico' },
+    { id: 'camila', nombre: 'Camila Rojas', usuario: 'recepcion', rol: 'recepcionista' },
   ],
 
   servicios: [
