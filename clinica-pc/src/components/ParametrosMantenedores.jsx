@@ -108,7 +108,9 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
     const nuevos = [], duplicados = [];
     for (const u of usuarios) {
       const nombre = String(u.nombre || '').trim();
-      const rol = String(u.rol || '').trim();
+      const rolIngresado = String(u.rol || '').trim();
+      const rol = (datos.roles || []).find((r) =>
+        r.id === rolIngresado || normalizar(r.nombre) === normalizar(rolIngresado))?.id || '';
       const alias = normalizar(u.usuario || nombre).replace(/[^a-z0-9]/g, '');
       if (!nombre || !alias || aliases.has(alias) ||
         !rolesPermitidos.includes(rol) || existentes.has(normalizar(nombre))) {
