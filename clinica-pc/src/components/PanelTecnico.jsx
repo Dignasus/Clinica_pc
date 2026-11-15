@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Badge, Button, Card, Form, Table } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
+import { tienePermiso } from '../data/roles.js';
 import ChecklistServicio from './tecnico/ChecklistServicio.jsx';
 import SeleccionServicios from './tecnico/SeleccionServicios.jsx';
 import EntregaEquipo from './tecnico/EntregaEquipo.jsx';
@@ -15,7 +16,7 @@ const etiquetas = {
 const normalizar = (valor) => String(valor || '').trim().toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
+export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usuarioId = '', puedeVerTodos = false }) {
   const { datos, dispatch } = useClinica();
   const [seleccion, setSeleccion] = useState(null);
   const [inspeccion, setInspeccion] = useState({ ...inspeccionVacia });
@@ -25,10 +26,8 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
   const [observaciones, setObservaciones] = useState('');
   const [mensaje, setMensaje] = useState('');
 
-  const rol = sessionStorage.getItem('userRol');
-  const nombreSesion = sessionStorage.getItem('userNombre');
-  const usuarioActual = datos.usuarios.find((u) => u.rol === 'tecnico' &&
-    [u.nombre, u.id].some((dato) => normalizar(dato) === normalizar(nombreSesion)));
+  const usuarioActual = datos.usuarios.find((u) => u.id === usuarioId && tienePermiso(datos, u.rol, 'tecnico'));
+  const rol = usuarioActual?.rol;
   const jornadasIds = new Set(datos.jornadas.filter((j) =>
     periodoGlobal === 'Todos' || j.periodo === periodoGlobal).map((j) => j.id));
 
@@ -281,7 +280,7 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos' }) {
       </div>
 
       {mensaje && <Alert variant="success">{mensaje}</Alert>}
-      {rol === 'tecnico' && !usuarioActual && (
+      {!usuarioActual && !puedeVerTodos && (
         <Alert variant="warning">La sesión no coincide con un técnico registrado en el prototipo.</Alert>
       )}
 
