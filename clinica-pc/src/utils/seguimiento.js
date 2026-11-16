@@ -21,6 +21,7 @@ export function puedeCerrarTicket(atencion) {
 
 export function estadoTicket(atencion) {
   if (atencion?.cierreTicket?.fecha) return 'cerrado';
+  if (atencion?.estado === 'en_custodia') return 'pendiente_retiro';
   if (atencion?.estado !== 'entregado') {
     return ['no_presentado', 'cancelado', 'cerrada', 'finalizada'].includes(atencion?.estado)
       ? 'sin_cierre_posservicio' : 'en_atencion';
@@ -39,6 +40,7 @@ export const etiquetasTicket = {
   cerrado: 'Ticket cerrado',
   sin_cierre_posservicio: 'Sin seguimiento posservicio',
   en_atencion: 'En atención',
+  pendiente_retiro: 'Pendiente de retiro desde custodia',
   pendiente_configurar: 'Seguimiento por preparar',
   pendiente_envio: 'Encuesta pendiente',
   esperando_respuesta: 'Encuesta habilitada (demo)',
