@@ -5,7 +5,8 @@ import './mantenedores/MantenedoresVisual.css';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
 import AdministracionRoles from './AdministracionRoles.jsx';
 
-const estadosFinales = ['entregado', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
+// La jornada presencial puede cerrar con equipos transferidos a custodia; esos equipos NO están entregados.
+const estadosFinales = ['entregado', 'en_custodia', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
 const normalizar = (v) => String(v ?? '').normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
@@ -72,7 +73,7 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
   const cerrarJornada = (j) => {
     const abiertas = datos.atenciones.filter((a) => a.jornadaId === j.id && !estadosFinales.includes(a.estado));
     if (abiertas.length) return setAviso({ tipo: 'warning', texto: `No se puede cerrar la jornada presencial: hay ${abiertas.length} atención(es) que aún requieren gestión en taller.` });
-    if (window.confirm(`¿Finalizar administrativamente la jornada presencial del ${j.fecha}? Los tickets en seguimiento continuarán abiertos.`)) {
+    if (window.confirm(`¿Finalizar administrativamente la jornada presencial del ${j.fecha}? Los tickets en seguimiento y los equipos en custodia continuarán pendientes de retiro o seguimiento.`)) {
       dispatch({ type: 'CERRAR_JORNADA', payload: j.id });
     }
   };
