@@ -5,9 +5,9 @@ export const QA_VISUAL_PREFIJO = 'QA-VISUAL-';
 
 const jornadaId = 'QA-VISUAL-JORNADA';
 const situaciones = [
-  { id: 'DIRECTO', estado: 'contactado', marca: 'QA Notebook', modelo: 'Retiro por tercero',
+  { id: 'DIRECTO', estado: 'contactado', marca: 'Lenovo', modelo: 'ThinkPad T480',
     nombre: 'Cliente', apellido: 'Prueba Directa', rut: 'QA-IDENTIDAD-01' },
-  { id: 'CUSTODIA', estado: 'en_custodia', marca: 'QA Notebook', modelo: 'Custodia piso 2',
+  { id: 'CUSTODIA', estado: 'en_custodia', marca: 'HP', modelo: 'ProBook 440 G7',
     nombre: 'Cliente', apellido: 'Prueba Custodia', rut: 'QA-IDENTIDAD-02' },
 ];
 
