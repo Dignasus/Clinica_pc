@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { Card, Form, Button, Alert } from 'react-bootstrap';
 import { useClinica } from '../../context/clinicaContextBase.js';
+import FormularioRetiro from './FormularioRetiro.jsx';
+import FormularioCustodia from './FormularioCustodia.jsx';
 
 export default function EntregaEquipo({
-  atencion, dispositivo, propietario, onVolver, onEntregada,
+  atencion, dispositivo, propietario, usuarioId, onVolver, onEntregada, onCustodia,
 }) {
   const { dispatch } = useClinica();
   const [mensaje, setMensaje] = useState('');
@@ -15,11 +17,6 @@ export default function EntregaEquipo({
   });
 
   const [contacto, setContacto] = useState({ medio: '', observaciones: '' });
-  const [entrega, setEntrega] = useState({
-    recibidoPor: '', conformidad: '',
-    pruebaConPropietario: false, observaciones: '',
-  });
-
   const controlClass = 'pc-tech-control';
   const cardClass = 'pc-tech-card';
   const botonVariante = 'danger';
@@ -57,27 +54,7 @@ export default function EntregaEquipo({
       payload: { atencionId: atencion.id, contacto },
     });
 
-    setMensaje('Aviso registrado. Falta realizar la prueba y entrega conjunta.');
-  };
-
-  const confirmarEntrega = (e) => {
-    e.preventDefault();
-
-    if (!entrega.pruebaConPropietario || !entrega.recibidoPor.trim() ||
-        !entrega.conformidad) {
-      return setMensaje('Completa los datos y confirma la prueba con el propietario.');
-    }
-
-    if (entrega.conformidad !== 'conforme' && !entrega.observaciones.trim()) {
-      return setMensaje('Registra las observaciones de la entrega.');
-    }
-
-    dispatch({
-      type: 'CONFIRMAR_ENTREGA',
-      payload: { atencionId: atencion.id, entrega, token: crypto.randomUUID() },
-    });
-
-    onEntregada();
+    setMensaje('Aviso registrado. Ahora puedes documentar el retiro o la transferencia a custodia.');
   };
 
   return (
@@ -101,7 +78,7 @@ export default function EntregaEquipo({
           atencion.estado === 'contactado' ? 'is-done' : ''}>
           <span>02</span><strong>Aviso</strong>
         </div>
-        <div className={atencion.estado === 'contactado' ? 'is-current' : ''}>
+        <div className={['contactado', 'en_custodia'].includes(atencion.estado) ? 'is-current' : ''}>
           <span>03</span><strong>Entrega</strong>
         </div>
       </div>
@@ -221,57 +198,58 @@ export default function EntregaEquipo({
         </Form>
       )}
 
-      {/* PASO 3: ENTREGA CONJUNTA */}
+      {/* PASO 3: ENTREGAR AHORA O TRASLADAR A CUSTODIA */}
       {atencion.estado === 'contactado' && (
-        <Form onSubmit={confirmarEntrega}>
+        <>
           <Card className={cardClass}>
-            <Card.Header className="pc-tech-card-head"><span className="pc-tech-number">03</span>
-                <div><strong>Entrega física y seguimiento posterior</strong><small>La entrega no cierra el ticket</small></div>
-              </Card.Header>
+            <Card.Header className="pc-tech-card-head">
+              <span className="pc-tech-number">03</span>
+              <div>
+                <strong>Entrega física al propietario o tercero autorizado</strong>
+                <small>El seguimiento comienza después del retiro efectivo.</small>
+              </div>
+            </Card.Header>
             <Card.Body className="pc-tech-card-body">
-              <Alert variant="info">
-                El contacto está registrado. Verifica el dispositivo junto al
-                propietario. El ticket continuará abierto para la encuesta posterior.
-              </Alert>
-
-              <Form.Group className="mb-3">
-                <Form.Label className="pc-tech-field-label">Nombre de quien recibe *</Form.Label>
-                <Form.Control required className={controlClass}
-                  placeholder="Persona que recibe el equipo"
-                  value={entrega.recibidoPor}
-                  onChange={(e) => actualizar(setEntrega, 'recibidoPor', e.target.value)} />
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label className="pc-tech-field-label">Conformidad de la entrega *</Form.Label>
-                <Form.Select required className={controlClass} value={entrega.conformidad}
-                  onChange={(e) => actualizar(setEntrega, 'conformidad', e.target.value)}>
-                  <option value="">Seleccione...</option>
-                  <option value="conforme">Entregado conforme</option>
-                  <option value="con_observaciones">Entregado con observaciones</option>
-                  <option value="no_conforme">Recibido sin conformidad</option>
-                </Form.Select>
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label className="pc-tech-field-label">Observaciones de la entrega</Form.Label>
-                <Form.Control as="textarea" rows={3} className={controlClass}
-                  placeholder="Dudas, observaciones del propietario o escribe Sin observaciones"
-                  value={entrega.observaciones}
-                  onChange={(e) => actualizar(setEntrega, 'observaciones', e.target.value)} />
-              </Form.Group>
-
-              <Form.Check type="checkbox" id={`prueba-propietario-${atencion.id}`}
-                className="mb-4" required checked={entrega.pruebaConPropietario}
-                label="Confirmo que el dispositivo fue probado junto al propietario."
-                onChange={(e) => actualizar(setEntrega, 'pruebaConPropietario', e.target.checked)} />
-
-              <Button type="submit" variant={botonVariante} size="lg" className="pc-tech-primary">
-                Confirmar entrega e iniciar seguimiento
-              </Button>
+              <FormularioRetiro atencion={atencion} propietario={propietario}
+                usuarioId={usuarioId} onEntregada={onEntregada} />
             </Card.Body>
           </Card>
-        </Form>
+          <Card className={cardClass}>
+            <Card.Header className="pc-tech-card-head">
+              <span className="pc-tech-number">04</span>
+              <div>
+                <strong>Transferir a custodia para retiro posterior</strong>
+                <small>Registrar ubicación y responsable, sin marcar la entrega al cliente.</small>
+              </div>
+            </Card.Header>
+            <Card.Body className="pc-tech-card-body">
+              <FormularioCustodia atencion={atencion} usuarioId={usuarioId}
+                onCustodia={onCustodia} />
+            </Card.Body>
+          </Card>
+        </>
+      )}
+
+      {/* RETIRO POSTERIOR DESDE CUSTODIA */}
+      {atencion.estado === 'en_custodia' && (
+        <Card className={cardClass}>
+          <Card.Header className="pc-tech-card-head">
+            <span className="pc-tech-number">05</span>
+            <div>
+              <strong>Retiro de equipo que permanece en custodia</strong>
+              <small>Confirmar retiro efectivo e identificar a quien lo recibe.</small>
+            </div>
+          </Card.Header>
+          <Card.Body className="pc-tech-card-body">
+            <Alert variant="warning">
+              <strong>Ubicación:</strong> {atencion.custodia?.ubicacion || 'No informada'}.
+              {' '}<strong>Responsable:</strong> {atencion.custodia?.responsableRecepcion || 'No informado'}.
+              El equipo todavía no se ha entregado al cliente.
+            </Alert>
+            <FormularioRetiro atencion={atencion} propietario={propietario}
+              usuarioId={usuarioId} onEntregada={onEntregada} />
+          </Card.Body>
+        </Card>
       )}
     </div>
   );
