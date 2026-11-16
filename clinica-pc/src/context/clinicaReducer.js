@@ -4,6 +4,7 @@ import { programarEncuesta, puedeCerrarTicket } from '../utils/seguimiento.js';
 import { validarCustodia, validarRetiro, permiteGestionEntrega, ESTADO_CUSTODIA } from '../utils/entregaCustodia.js';
 import { fechaLocal, obtenerEstadoJornada } from '../utils/jornadas.js';
 import { encontrarRegionDeComuna } from '../data/regionesChile.js';
+import { agregarEscenariosQaVisual, reiniciarEscenariosQaVisual } from '../utils/qaVisual.js';
 import {
   buscarDispositivoPrevio,
   normalizarRutIdentidad,
@@ -41,6 +42,13 @@ function limpiarDatosDemo(state) {
 
 export function clinicaReducer(state, action) {
   switch (action.type) {
+    case 'QA_VISUAL_CARGAR':
+      // Exclusivo del servidor Vite de desarrollo; en producción no modifica datos.
+      return import.meta.env?.DEV ? agregarEscenariosQaVisual(state) : state;
+
+    case 'QA_VISUAL_REINICIAR':
+      return import.meta.env?.DEV ? reiniciarEscenariosQaVisual(state) : state;
+
     case 'REGISTRAR_PREINSCRIPCION': {
       const { propietario, dispositivo, atencion } = action.payload;
       const jornada = state.jornadas.find((j) => j.id === atencion.jornadaId);
