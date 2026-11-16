@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { datosIniciales } from '../data/datosIniciales.js';
-import { agregarEscenariosQaVisual, reiniciarEscenariosQaVisual, hayEscenariosQaVisual, QA_VISUAL_PERIODO } from './qaVisual.js';
+import { agregarEscenariosQaVisual, reiniciarEscenariosQaVisual, corregirModelosQaVisual, hayEscenariosQaVisual, QA_VISUAL_PERIODO } from './qaVisual.js';
 
 test('semillas QA agregan dos atenciones ficticias sin alterar las existentes', () => {
   const datos = structuredClone(datosIniciales);
@@ -46,4 +46,32 @@ test('reiniciar casos QA conserva los registros ajenos a las pruebas', () => {
   assert.ok(reiniciados.propietarios.find((p) => p.id === 'P-PREVIO'));
   assert.ok(reiniciados.dispositivos.find((d) => d.id === 'D-PREVIO'));
   assert.equal(reiniciados.atenciones.find((a) => a.id === 'QA-VISUAL-AT-DIRECTO').estado, 'contactado');
+});
+
+test('corrige marcas y modelos del QA existente sin perder las entregas ni las custodias', () => {
+  const datos = agregarEscenariosQaVisual(structuredClone(datosIniciales));
+  const anterior = {
+    ...datos,
+    dispositivos: datos.dispositivos.map((d) => {
+      if (d.id === 'QA-VISUAL-DISP-DIRECTO') {
+        return { ...d, marca: 'QA Notebook', modelo: 'Retiro por tercero' };
+      }
+      if (d.id === 'QA-VISUAL-DISP-CUSTODIA') {
+        return { ...d, marca: 'QA Notebook', modelo: 'Custodia piso 2' };
+      }
+      return d;
+    }),
+    atenciones: datos.atenciones.map((a) =>
+      a.id === 'QA-VISUAL-AT-DIRECTO'
+        ? { ...a, estado: 'entregado', entrega: { recibidoPor: 'Carlos Fernández' } }
+        : a),
+  };
+  const corregidos = corregirModelosQaVisual(anterior);
+  assert.deepEqual(
+    corregidos.dispositivos.map((d) => [d.marca, d.modelo]),
+    [['Lenovo', 'ThinkPad T480'], ['HP', 'ProBook 440 G7']],
+  );
+  assert.deepEqual(corregidos.atenciones, anterior.atenciones);
+  assert.equal(corregidos.atenciones[0].entrega.recibidoPor, 'Carlos Fernández');
+  assert.equal(corregirModelosQaVisual(corregidos), corregidos, 'Migración idempotente');
 });
