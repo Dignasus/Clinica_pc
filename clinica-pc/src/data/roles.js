@@ -23,6 +23,14 @@ export function nombreDeRol(datos, rolId) {
   return (datos.roles || []).find((r) => r.id === rolId)?.nombre || 'Rol no disponible';
 }
 
+// Acceder al panel técnico no implica estar disponible para recibir equipos.
+// El valor alternativo conserva compatibilidad con usuarios de versiones anteriores.
+export function esTecnicoAsignable(datos, usuario) {
+  if (!usuario) return false;
+  const habilitado = usuario.habilitadoTecnico ?? (usuario.rol === 'tecnico');
+  return habilitado && tienePermiso(datos, usuario.rol, 'tecnico');
+}
+
 export function personalTecnico(datos) {
-  return datos.usuarios.filter((usuario) => tienePermiso(datos, usuario.rol, 'tecnico'));
+  return datos.usuarios.filter((usuario) => esTecnicoAsignable(datos, usuario));
 }
