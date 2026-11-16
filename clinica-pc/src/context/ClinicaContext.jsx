@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer } from 'react';
 import { datosIniciales } from '../data/datosIniciales.js';
 import { MODULOS, rolesBase, tienePermiso, esTecnicoAsignable } from '../data/roles.js';
 import { programarEncuesta, puedeCerrarTicket } from '../utils/seguimiento.js';
+import { validarCustodia, validarRetiro, permiteGestionEntrega, ESTADO_CUSTODIA } from '../utils/entregaCustodia.js';
 import { ClinicaContext } from './clinicaContextBase.js';
 import { fechaLocal, obtenerEstadoJornada } from '../utils/jornadas.js';
 import { encontrarRegionDeComuna } from '../data/regionesChile.js';
@@ -14,7 +15,7 @@ import {
 const STORAGE_KEY = 'clinica-pc-demo-v1';
 const BACKUP_KEY = `${STORAGE_KEY}-backup`;
 // La jornada presencial puede finalizar aunque los tickets entregados sigan en seguimiento.
-const estadosSinAtencionPresencial = ['entregado', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
+const estadosSinAtencionPresencial = ['entregado', ESTADO_CUSTODIA, 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
 
 function cargarDatos() {
   try {
@@ -249,27 +250,60 @@ function clinicaReducer(state, action) {
       };
     }
 
-    case 'CONFIRMAR_ENTREGA': {
-      const { atencionId, entrega, token } = action.payload;
-      if (
-        !entrega.pruebaConPropietario ||
-        !entrega.conformidad ||
-        !String(entrega.recibidoPor ?? '').trim() ||
-        !token
-      )
-        return state;
+    case 'REGISTRAR_CUSTODIA': {
+      const { atencionId, custodia, usuarioId } = action.payload || {};
+      if (validarCustodia(custodia) || !permiteGestionEntrega(state, usuarioId)) return state;
       return {
         ...state,
         atenciones: state.atenciones.map((a) =>
-          a.id === atencionId && a.estado === 'contactado'
+          a.id === atencionId && a.estado === 'contactado' && !a.entrega
             ? {
                 ...a,
-                entrega: { ...entrega, fecha: new Date().toISOString() },
-                estado: 'entregado',
-                seguimiento: programarEncuesta(new Date().toISOString(), token),
+                estado: ESTADO_CUSTODIA,
+                custodia: {
+                  ubicacion: String(custodia.ubicacion).trim(),
+                  responsableRecepcion: String(custodia.responsableRecepcion).trim(),
+                  motivo: String(custodia.motivo).trim(),
+                  fechaIngreso: new Date().toISOString(),
+                  registradoPorUsuarioId: usuarioId,
+                  confirmacionRecepcion: true,
+                },
               }
-            : a,
-        ),
+            : a),
+      };
+    }
+
+    case 'CONFIRMAR_ENTREGA': {
+      const { atencionId, entrega, token, usuarioId } = action.payload || {};
+      if (!token || validarRetiro(entrega) || !permiteGestionEntrega(state, usuarioId)) return state;
+      const fechaRetiro = new Date().toISOString();
+      return {
+        ...state,
+        atenciones: state.atenciones.map((a) => {
+          if (a.id !== atencionId || !['contactado', ESTADO_CUSTODIA].includes(a.estado) ||
+            a.entrega || a.cierreTicket) return a;
+          if (a.estado === ESTADO_CUSTODIA && !a.custodia?.fechaIngreso) return a;
+          return {
+            ...a,
+            entrega: {
+              ...entrega,
+              recibidoPor: String(entrega.recibidoPor).trim(),
+              observaciones: String(entrega.observaciones || '').trim(),
+              relacion: entrega.tipoReceptor === 'tercero' ? String(entrega.relacion).trim() : '',
+              medioAutorizacion: entrega.tipoReceptor === 'tercero' ? entrega.medioAutorizacion : '',
+              autorizacionConfirmada: entrega.tipoReceptor === 'tercero',
+              pruebaConPropietario: entrega.tipoReceptor === 'propietario',
+              fecha: fechaRetiro,
+              registradoPorUsuarioId: usuarioId,
+              procedenciaCustodia: a.estado === ESTADO_CUSTODIA,
+            },
+            ...(a.estado === ESTADO_CUSTODIA
+              ? { custodia: { ...a.custodia, fechaSalida: fechaRetiro, entregadoPorUsuarioId: usuarioId } }
+              : {}),
+            estado: 'entregado',
+            seguimiento: programarEncuesta(fechaRetiro, token),
+          };
+        }),
       };
     }
 
