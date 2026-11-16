@@ -1,4 +1,5 @@
 import { Alert, Badge, Button, Card, Col, Row, Table } from 'react-bootstrap';
+import FormularioRetiro from '../tecnico/FormularioRetiro.jsx';
 import SeguimientoTicket from './SeguimientoTicket.jsx';
 
 const estados = {
@@ -7,6 +8,7 @@ const estados = {
   en_proceso: { nombre: 'En proceso', color: 'info' },
   listo_entrega: { nombre: 'Listo para entrega', color: 'primary' },
   contactado: { nombre: 'Contactado', color: 'primary' },
+  en_custodia: { nombre: 'En custodia', color: 'warning' },
   entregado: { nombre: 'Entregado', color: 'success' },
   no_presentado: { nombre: 'No presentado', color: 'danger' },
   cancelado: { nombre: 'Cancelado', color: 'secondary' },
@@ -69,7 +71,7 @@ function Seccion({ numero, titulo, subtitulo, children }) {
   );
 }
 
-export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver, puedeGestionarSeguimiento = false, usuarioId = '' }) {
+export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver, puedeGestionarSeguimiento = false, puedeGestionarCustodia = false, usuarioId = '' }) {
   const dispositivo = registro.dispositivo || {};
   const propietario = registro.propietario || {};
   const jornada = registro.jornada || {};
@@ -78,6 +80,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
   const verificacion = registro.verificacionFinal || {};
   const contacto = registro.contacto || {};
   const entrega = registro.entrega || {};
+  const custodia = registro.custodia || {};
 
   const checklist = Array.isArray(registro.respuestasChecklist)
     ? registro.respuestasChecklist : [];
@@ -294,14 +297,29 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
             <div className="hist-detail-group">
               <h3>Entrega del dispositivo</h3>
               <Campo nombre="Recibido por" valor={entrega.recibidoPor} />
+              <Campo nombre="Tipo de retiro" valor={
+                entrega.tipoReceptor === 'tercero' ? 'Tercero autorizado' :
+                  entrega.tipoReceptor === 'propietario' ? 'Propietario' : 'No informado'
+              } />
+              <Campo nombre="Identidad verificada" valor={entrega.identidadVerificada} />
+              {entrega.tipoReceptor === 'tercero' && (
+                <>
+                  <Campo nombre="Relación con propietario" valor={entrega.relacion} />
+                  <Campo nombre="Autorización confirmada" valor={entrega.autorizacionConfirmada} />
+                  <Campo nombre="Medio de autorización" valor={entrega.medioAutorizacion} />
+                  <Campo nombre="Prueba con tercero" valor={entrega.pruebaConReceptor} />
+                </>
+              )}
               <Campo nombre="Conformidad" valor={entrega.conformidad} />
-              <Campo nombre="Prueba conjunta" valor={
-                entrega.pruebaConPropietario === undefined
-                  ? 'No registrada'
-                  : entrega.pruebaConPropietario ? 'Confirmada' : 'No confirmada'
+              <Campo nombre="Prueba con propietario" valor={
+                entrega.pruebaConPropietario === undefined ? 'No registrada' :
+                  entrega.pruebaConPropietario ? 'Confirmada' : 'No realizada'
               } />
               <Campo nombre="Observaciones" valor={entrega.observaciones} />
               <Campo nombre="Fecha" valor={mostrarFecha(entrega.fecha)} />
+              <Campo nombre="Registrado por" valor={
+                datos.usuarios.find((u) => u.id === entrega.registradoPorUsuarioId)?.nombre
+              } />
             </div>
           </Col>
         </Row>
@@ -312,13 +330,50 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         )}
       </Seccion>
 
-      <Seccion numero={6} titulo="Seguimiento posterior y cierre del ticket"
+      <Seccion numero={6} titulo="Custodia temporal y retiro posterior"
+        subtitulo="Ubicación, responsables y transferencia del dispositivo fuera del horario de la clínica.">
+        {registro.custodia ? (
+          <div className="hist-detail-group">
+            <Campo nombre="Ubicación registrada" valor={custodia.ubicacion} />
+            <Campo nombre="Responsable que recibió" valor={custodia.responsableRecepcion} />
+            <Campo nombre="Motivo" valor={custodia.motivo} />
+            <Campo nombre="Ingreso a custodia" valor={mostrarFecha(custodia.fechaIngreso)} />
+            <Campo nombre="Transferencia registrada por" valor={
+              datos.usuarios.find((u) => u.id === custodia.registradoPorUsuarioId)?.nombre
+            } />
+            <Campo nombre="Salida de custodia" valor={mostrarFecha(custodia.fechaSalida)} />
+            <Campo nombre="Retiro registrado por" valor={
+              datos.usuarios.find((u) => u.id === custodia.entregadoPorUsuarioId)?.nombre
+            } />
+          </div>
+        ) : (
+          <Alert variant="secondary" className="mb-0">Esta atención no registra transferencia a custodia.</Alert>
+        )}
+        {registro.estado === 'en_custodia' && (
+          <>
+            <Alert variant="warning" className="mt-3">
+              El equipo permanece bajo custodia. Todavía no fue retirado por el propietario
+              ni por un tercero autorizado, por lo que NO se ha programado la encuesta.
+            </Alert>
+            {puedeGestionarCustodia ? (
+              <div className="border rounded p-3 mt-3">
+                <h3 className="h5 mb-3">Registrar retiro efectivo desde custodia</h3>
+                <FormularioRetiro atencion={registro} propietario={propietario} usuarioId={usuarioId} />
+              </div>
+            ) : (
+              <p className="mb-0">El retiro debe registrarlo recepción o un administrador autorizado.</p>
+            )}
+          </>
+        )}
+      </Seccion>
+
+      <Seccion numero={7} titulo="Seguimiento posterior y cierre del ticket"
         subtitulo="Encuesta de satisfacción, incidencias y revisión administrativa.">
         <SeguimientoTicket atencion={registro}
           puedeGestionar={puedeGestionarSeguimiento} usuarioId={usuarioId} />
       </Seccion>
 
-      <Seccion numero={7} titulo="Relación con otras atenciones"
+      <Seccion numero={8} titulo="Relación con otras atenciones"
         subtitulo="Visitas independientes que comparten el mismo dispositivo.">
         <p className="hist-section-explanation">
           Todas estas atenciones comparten el mismo identificador de dispositivo.
