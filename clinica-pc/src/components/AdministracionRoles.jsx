@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Alert, Button, Card, Col, Form, Row, Table } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
-import { MODULOS } from '../data/roles.js';
+import { MODULOS, tienePermiso } from '../data/roles.js';
 
 // Configuración ilustrativa para la versión académica. Autorización real requiere API.
 export default function AdministracionRoles() {
@@ -50,6 +50,19 @@ export default function AdministracionRoles() {
     }
     dispatch({ type: 'ASIGNAR_ROL_USUARIO', payload: { usuarioId: usuario.id, rolId } });
     setMensaje('Rol asignado.');
+  };
+
+  const configurarTecnico = (usuario, habilitado) => {
+    if (habilitado && !tienePermiso(datos, usuario.rol, 'tecnico')) {
+      setMensaje('El usuario necesita acceso al módulo técnico para recibir asignaciones.');
+      return;
+    }
+    dispatch({ type: 'CONFIGURAR_TECNICO_ASIGNABLE', payload: {
+      usuarioId: usuario.id, habilitado,
+    } });
+    setMensaje(habilitado
+      ? 'Usuario habilitado para recibir equipos.'
+      : 'Usuario retirado de nuevas asignaciones técnicas.');
   };
 
   return (
@@ -101,7 +114,7 @@ export default function AdministracionRoles() {
           <div><h3>Asignación de roles</h3><p>Los cambios se reflejan en el menú del usuario.</p></div>
         </div>
         <Table responsive className="mp-table">
-          <thead><tr><th>Integrante</th><th>Usuario de acceso</th><th>Rol</th></tr></thead>
+          <thead><tr><th>Integrante</th><th>Usuario de acceso</th><th>Rol</th><th>Recibe equipos</th></tr></thead>
           <tbody>
             {datos.usuarios.map((u) => (
               <tr key={u.id}>
@@ -113,13 +126,21 @@ export default function AdministracionRoles() {
                     {datos.roles.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                   </Form.Select>
                 </td>
+                <td>
+                  <Form.Check type="checkbox" id={`asignable-${u.id}`}
+                    label="Habilitado" aria-label={`Permitir asignaciones técnicas a ${u.nombre}`}
+                    checked={u.habilitadoTecnico ?? (u.rol === 'tecnico')}
+                    disabled={!tienePermiso(datos, u.rol, 'tecnico')}
+                    onChange={(e) => configurarTecnico(u, e.target.checked)} />
+                </td>
               </tr>
             ))}
           </tbody>
         </Table>
         <Alert variant="secondary" className="mt-3 mb-0">
-          Demostración frontend: el navegador guarda roles y permisos localmente.
-          La autenticación y autorización de una implementación real requieren backend.
+          Acceder al panel técnico no habilita automáticamente para recibir equipos.
+          Activa "Recibe equipos" solamente para personas que ejercerán funciones técnicas.
+          Estos cambios se guardan localmente; la autenticación y autorización reales requieren backend.
         </Alert>
       </Card.Body>
     </Card>
