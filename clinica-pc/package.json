@@ -8,7 +8,9 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:seguimiento": "node --test src/utils/seguimiento.test.js"
+    "test:seguimiento": "node --test src/utils/seguimiento.test.js",
+    "test:entrega": "node --test src/utils/entregaCustodia.test.js",
+    "test:flujos": "node --test src/utils/*.test.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
