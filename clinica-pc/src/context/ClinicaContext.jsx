@@ -4,6 +4,7 @@ import { rolesBase } from '../data/roles.js';
 import { ClinicaContext } from './clinicaContextBase.js';
 import { encontrarRegionDeComuna } from '../data/regionesChile.js';
 import { clinicaReducer } from './clinicaReducer.js';
+import { corregirModelosQaVisual } from '../utils/qaVisual.js';
 
 const STORAGE_KEY = 'clinica-pc-demo-v1';
 const BACKUP_KEY = `${STORAGE_KEY}-backup`;
@@ -20,7 +21,7 @@ function cargarDatos() {
         const roles = esVersionAnterior ? structuredClone(rolesBase) : datos.roles;
         const alias = { matias: 'admin', camila: 'recepcion', cristian: 'tecnico' };
         const rolesCorregidos = { matias: 'superusuario', camila: 'recepcionista', cristian: 'tecnico' };
-        return {
+        return corregirModelosQaVisual({
           ...datos,
           roles,
           usuarios: datos.usuarios.map((u) => ({
@@ -36,7 +37,7 @@ function cargarDatos() {
             ...p,
             region: p.region || encontrarRegionDeComuna(p.comuna) || '',
           })),
-        };
+        });
       }
     }
   } catch (error) {
