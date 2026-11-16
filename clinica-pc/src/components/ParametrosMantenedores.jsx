@@ -4,6 +4,7 @@ import { useClinica } from '../context/clinicaContextBase.js';
 import './mantenedores/MantenedoresVisual.css';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
 import AdministracionRoles from './AdministracionRoles.jsx';
+import { hayEscenariosQaVisual, QA_VISUAL_PERIODO } from '../utils/qaVisual.js';
 
 // La jornada presencial puede cerrar con equipos transferidos a custodia; esos equipos NO están entregados.
 const estadosFinales = ['entregado', 'en_custodia', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
@@ -185,6 +186,42 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         <Alert variant={aviso.tipo} className="mp-notice" dismissible onClose={() => setAviso(null)}>
           {aviso.texto}
         </Alert>
+      )}
+
+      {import.meta.env.DEV && (
+        <Card className="mp-section">
+          <Card.Header className="mp-section-header">
+            <span className="mp-step">QA</span>
+            <div>
+              <h2>Escenarios rápidos de prueba visual</h2>
+              <p>Exclusivo de desarrollo: crea dos notebooks ficticios listos para retiro y custodia.</p>
+            </div>
+          </Card.Header>
+          <Card.Body className="mp-section-body">
+            <Alert variant="info">
+              No afecta tus atenciones anteriores ni envía información real. Usa el período
+              <strong> {QA_VISUAL_PERIODO}</strong> para ver los equipos en el panel técnico
+              y el historial. Esta herramienta no aparece en la versión publicada.
+            </Alert>
+            <div className="d-flex flex-wrap gap-2">
+              <Button variant="danger" disabled={hayEscenariosQaVisual(datos)}
+                onClick={() => {
+                  dispatch({ type: 'QA_VISUAL_CARGAR' });
+                  setAviso({ tipo: 'success', texto: 'Listos dos notebooks QA: retiro por tercero y custodia en piso 2.' });
+                }}>
+                Crear 2 notebooks QA
+              </Button>
+              <Button variant="outline-secondary" disabled={!hayEscenariosQaVisual(datos)}
+                onClick={() => {
+                  if (!window.confirm('¿Reiniciar SOLO los registros QA Visual? Se perderá el avance de esos dos equipos ficticios.')) return;
+                  dispatch({ type: 'QA_VISUAL_REINICIAR' });
+                  setAviso({ tipo: 'info', texto: 'Reiniciados los dos escenarios QA. Tus demás registros siguen intactos.' });
+                }}>
+                Reiniciar únicamente pruebas QA
+              </Button>
+            </div>
+          </Card.Body>
+        </Card>
       )}
 
       <Card className="mp-section">
