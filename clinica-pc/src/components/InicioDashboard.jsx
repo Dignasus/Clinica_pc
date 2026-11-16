@@ -21,7 +21,7 @@ export default function InicioDashboard({
   const preinscripciones = atenciones.filter((a) => a.estado === 'preinscrito').length;
   const equiposEnTaller = atenciones.filter((a) => estadosTaller.includes(a.estado)).length;
   const trabajosEnProceso = atenciones.filter((a) => a.estado === 'en_proceso').length;
-  const pendientesEntrega = atenciones.filter((a) => ['listo_entrega', 'contactado'].includes(a.estado)).length;
+  const pendientesEntrega = atenciones.filter((a) => ['listo_entrega', 'contactado', 'en_custodia'].includes(a.estado)).length;
   const entregados = atenciones.filter((a) => a.estado === 'entregado').length;
 
   const tecnicoActual = personalTecnico(datos).find((u) => u.id === usuarioId);
