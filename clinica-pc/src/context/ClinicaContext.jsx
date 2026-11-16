@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { datosIniciales } from '../data/datosIniciales.js';
-import { MODULOS, rolesBase, tienePermiso } from '../data/roles.js';
+import { MODULOS, rolesBase, tienePermiso, esTecnicoAsignable } from '../data/roles.js';
 import { programarEncuesta, puedeCerrarTicket } from '../utils/seguimiento.js';
 import { ClinicaContext } from './clinicaContextBase.js';
 import { fechaLocal, obtenerEstadoJornada } from '../utils/jornadas.js';
@@ -36,6 +36,8 @@ function cargarDatos() {
             usuario: u.usuario || alias[u.id] || u.id.toLowerCase(),
             // Corregir DEF-01 únicamente en la migración desde la versión de roles fijos.
             rol: esVersionAnterior ? (rolesCorregidos[u.id] || u.rol) : u.rol,
+            habilitadoTecnico: u.habilitadoTecnico ??
+              ((esVersionAnterior ? (rolesCorregidos[u.id] || u.rol) : u.rol) === 'tecnico'),
             nombre: esVersionAnterior && u.id === 'camila' ? 'Camila Rojas' : u.nombre,
           })),
           propietarios: datos.propietarios.map((p) => ({
@@ -132,7 +134,7 @@ function clinicaReducer(state, action) {
       const jornada = state.jornadas.find((j) => j.id === atencion?.jornadaId);
       const jornadaHabilitada =
         jornada?.fecha === fechaLocal() && obtenerEstadoJornada(jornada) === 'activa';
-      const tecnicoValido = state.usuarios.some((u) => u.id === tecnicoId && tienePermiso(state, u.rol, 'tecnico'));
+      const tecnicoValido = state.usuarios.some((u) => u.id === tecnicoId && esTecnicoAsignable(state, u));
       if (!atencion || atencion.estado !== 'preinscrito' || !jornadaHabilitada || !tecnicoValido)
         return state;
       return {
@@ -520,6 +522,18 @@ function clinicaReducer(state, action) {
         ? { ...u, rol: rolId } : u) };
     }
 
+    case 'CONFIGURAR_TECNICO_ASIGNABLE': {
+      const { usuarioId, habilitado } = action.payload || {};
+      const usuario = state.usuarios.find((u) => u.id === usuarioId);
+      if (!usuario || typeof habilitado !== 'boolean') return state;
+      if (habilitado && !tienePermiso(state, usuario.rol, 'tecnico')) return state;
+      return {
+        ...state,
+        usuarios: state.usuarios.map((u) => u.id === usuarioId
+          ? { ...u, habilitadoTecnico: habilitado } : u),
+      };
+    }
+
     case 'AGREGAR_USUARIOS': {
       const lista = Array.isArray(action.payload) ? action.payload : [];
       const rolesValidos = new Set(state.roles.map((r) => r.id));
@@ -533,7 +547,7 @@ function clinicaReducer(state, action) {
           nombres.has(nombre.toLowerCase()) || aliases.has(alias)) continue;
         nombres.add(nombre.toLowerCase());
         aliases.add(alias);
-        nuevos.push({ id: usuario.id, nombre, usuario: alias, rol: usuario.rol });
+        nuevos.push({ id: usuario.id, nombre, usuario: alias, rol: usuario.rol, habilitadoTecnico: false });
       }
       return nuevos.length ? { ...state, usuarios: [...state.usuarios, ...nuevos] } : state;
     }
