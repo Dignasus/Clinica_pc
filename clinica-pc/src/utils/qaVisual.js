@@ -2,6 +2,25 @@ import { fechaLocal } from './jornadas.js';
 
 export const QA_VISUAL_PERIODO = 'QA Visual';
 export const QA_VISUAL_PREFIJO = 'QA-VISUAL-';
+ 
+// Corrige únicamente las etiquetas de las primeras semillas QA.
+// No cambia la atención, su entrega ni el historial guardado en el navegador.
+export function corregirModelosQaVisual(datos) {
+  if (!Array.isArray(datos?.dispositivos)) return datos;
+  let hayCambios = false;
+  const dispositivos = datos.dispositivos.map((d) => {
+    const original = d.id === 'QA-VISUAL-DISP-DIRECTO' &&
+      d.marca === 'QA Notebook' && d.modelo === 'Retiro por tercero';
+    const custodiado = d.id === 'QA-VISUAL-DISP-CUSTODIA' &&
+      d.marca === 'QA Notebook' && d.modelo === 'Custodia piso 2';
+    if (!original && !custodiado) return d;
+    hayCambios = true;
+    return original ? { ...d, marca: 'Lenovo', modelo: 'ThinkPad T480' }
+      : { ...d, marca: 'HP', modelo: 'ProBook 440 G7' };
+  });
+  return hayCambios ? { ...datos, dispositivos } : datos;
+}
+
 
 const jornadaId = 'QA-VISUAL-JORNADA';
 const situaciones = [
