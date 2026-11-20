@@ -67,6 +67,11 @@
 .pc-monitor__persona { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .pc-monitor__avatar { flex-shrink: 0; height: 34px; width: 34px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #be123c; background: var(--pc-superficie); border: 1px solid var(--pc-borde); border-radius: 50%; }
 .pc-monitor__nombre { font-size: 12px; font-weight: 650; color: var(--pc-texto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-monitor__datos { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.pc-monitor__detalle { font-size: 11px; line-height: 1.5; color: var(--pc-sutil); }
+.pc-monitor__vacio p { margin: 0 0 7px; }
+.pc-monitor__vacio p:last-child { margin-bottom: 0; }
+.pc-monitor__nota { margin: 13px 0 0; font-size: 12px; line-height: 1.5; color: var(--pc-sutil); }
 .pc-monitor__estado { display: inline-flex; flex-shrink: 0; align-items: center; gap: 7px; padding: 6px 9px; border-radius: 20px; font-size: 10px; font-weight: 650; white-space: nowrap; }
 .pc-monitor__estado > span { flex-shrink: 0; height: 6px; width: 6px; background: currentColor; border-radius: 50%; }
 .pc-monitor__estado--libre { background: #ecfdf3; color: #027a48; }
