@@ -1,288 +1,259 @@
-/* Clínica del PC · acceso editorial y panel técnico propio de la aplicación. */
-.cpc-login, .cpc-login * { box-sizing: border-box; }
+/* Clínica del PC · Login glass: fotografía institucional reutilizada, sin dependencias nuevas. */
+.cpc-login,
+.cpc-login * { box-sizing: border-box; }
+
 .cpc-login {
-  display: grid;
-  grid-template-columns: minmax(390px, 46%) minmax(0, 54%);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
   min-height: 100dvh;
-  background: #ffffff;
+  width: 100%;
+  overflow: hidden;
+  padding: clamp(18px, 4vh, 44px) clamp(14px, 3vw, 36px);
+  background-color: #14233b;
+  background-image:
+    linear-gradient(115deg, rgba(8, 22, 43, .69), rgba(18, 30, 57, .48) 48%, rgba(9, 25, 47, .69)),
+    url('../assets/login-campus.jpg');
+  background-position: center, center 48%;
+  background-size: cover;
+  background-repeat: no-repeat;
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
-.cpc-login__left {
+
+.cpc-login::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 49%, rgba(207, 225, 250, .10), transparent 60%);
+}
+
+.cpc-login__glass {
+  width: min(100%, 470px);
+  min-width: 0;
+  margin: auto;
+  padding: clamp(25px, 3vw, 38px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, .82);
+  background: rgba(244, 248, 254, .85);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+  box-shadow: 0 26px 80px rgba(1, 12, 31, .30), inset 0 1px 0 rgba(255, 255, 255, .54);
+}
+
+.cpc-login__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: clamp(21px, 3vh, 29px);
+}
+
+.cpc-login__brand img {
+  display: block;
+  width: 148px;
+  max-width: 48%;
+  max-height: 65px;
+  object-fit: contain;
+}
+
+.cpc-login__slogan {
+  flex: 0 0 auto;
+  padding-left: 16px;
+  border-left: 1px solid #abb6c5;
+  color: #26364a;
+  font-size: 11px;
+  line-height: 1.25;
+  letter-spacing: -.01em;
+  font-weight: 850;
+}
+
+.cpc-login__heading {
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.cpc-login__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 11px;
+  padding: 7px 11px;
+  background: rgba(198, 0, 29, .07);
+  border: 1px solid rgba(198, 0, 29, .18);
+  border-radius: 999px;
+  color: #9f001b;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.cpc-login__eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c6001d;
+}
+
+.cpc-login__heading h1 {
+  margin: 0 0 9px;
+  color: #142238;
+  font-size: clamp(29px, 3vw, 37px);
+  font-weight: 850;
+  letter-spacing: -.05em;
+  line-height: 1.15;
+}
+
+.cpc-login__period { color: #c6001d; }
+
+.cpc-login__heading > p:last-child {
+  max-width: 36ch;
+  margin: 0 auto;
+  color: #4c5c71;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cpc-login__form {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 28px;
-  padding: clamp(28px, 4.3vw, 64px);
-  min-height: 100dvh;
   min-width: 0;
 }
-.cpc-login__brand { display: flex; align-items: center; gap: 18px; }
-.cpc-login__brand img { display: block; width: min(175px, 49%); height: auto; max-height: 70px; object-fit: contain; }
-.cpc-login__slogan {
-  padding-left: 17px;
-  border-left: 1px solid #b3bac6;
-  color: #172238;
-  font-size: 12px;
-  line-height: 1.2;
-  font-weight: 800;
-  letter-spacing: -.015em;
-}
-.cpc-login__content { width: 100%; max-width: 460px; margin: auto; }
-.cpc-login__eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 0 0 16px;
-  color: #b5001a;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .13em;
-}
-.cpc-login__eyebrow span { width: 21px; height: 3px; border-radius: 2px; background: #b5001a; }
-.cpc-login__heading { margin-bottom: clamp(23px, 3vw, 34px); }
-.cpc-login__heading h1 {
-  font-size: clamp(31px, 3.1vw, 45px);
-  font-weight: 800;
-  letter-spacing: -.055em;
-  line-height: 1.12;
-  margin: 0 0 12px;
-  color: #152034;
-}
-.cpc-login__period { color: #c6001d; }
-.cpc-login__heading p {
-  max-width: 43ch;
-  margin: 0;
-  color: #627086;
-  font-size: 14px;
-  line-height: 1.65;
-}
-.cpc-login__form { display: flex; flex-direction: column; }
+
 .cpc-login__form label {
-  display: block;
-  margin-bottom: 8px;
-  color: #23324a;
+  margin: 0 0 8px;
+  color: #203149;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 750;
 }
+
 .cpc-login__form input {
+  display: block;
   width: 100%;
   min-width: 0;
-  height: 50px;
-  margin-bottom: 18px;
-  border: 1px solid #cbd4e0;
-  border-radius: 11px;
-  background: #ffffff;
-  color: #152034;
-  outline: none;
-  padding: 0 15px;
+  height: 49px;
+  margin: 0 0 17px;
+  padding: 0 14px;
+  color: #1a293f;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid #b9c5d4;
+  border-radius: 10px;
+  font: inherit;
   font-size: 14px;
+  outline: none;
   transition: border-color .16s ease, box-shadow .16s ease;
 }
-.cpc-login__form input::placeholder { color: #78869a; }
+
+.cpc-login__form input::placeholder { color: #6d7a8c; opacity: 1; }
+
 .cpc-login__form input:focus {
-  border-color: #c6001d;
-  box-shadow: 0 0 0 3px rgba(198,0,29,.13);
+  border-color: #bb0020;
+  box-shadow: 0 0 0 3px rgba(198, 0, 29, .16);
 }
-.cpc-login__password-field { position: relative; margin-bottom: 4px; }
-.cpc-login__password-field input { padding-right: 89px; }
+
+.cpc-login__password-field {
+  position: relative;
+}
+
+.cpc-login__password-field input { padding-right: 91px; }
+
 .cpc-login__toggle-password {
   position: absolute;
-  top: 5px;
-  right: 5px;
-  height: 40px;
-  min-width: 75px;
-  padding: 0 10px;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  min-height: 41px;
+  padding: 0 9px;
+  background: rgba(235, 239, 246, .90);
+  color: #283c56;
   border: 0;
   border-radius: 8px;
-  background: #f3f5f9;
-  color: #33435b;
-  cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 750;
+  cursor: pointer;
 }
-.cpc-login__toggle-password:hover { background: #e8edf4; }
+
+.cpc-login__toggle-password:hover { background: #dce5ef; }
+
+.cpc-login__error {
+  margin: -1px 0 15px;
+  padding: 11px 13px;
+  background: #fff1f3;
+  border: 1px solid #ecc0c9;
+  border-radius: 9px;
+  color: #92152c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .cpc-login__submit {
   display: flex;
+  justify-content: center;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 13px;
   width: 100%;
-  min-height: 52px;
+  min-height: 51px;
   margin-top: 5px;
-  padding: 13px 18px;
+  padding: 12px 18px;
   border: 1px solid #c6001d;
-  border-radius: 11px;
+  border-radius: 10px;
   background: #c6001d;
   color: #fff;
   font-size: 14px;
-  font-weight: 750;
-  text-align: left;
+  font-weight: 800;
   cursor: pointer;
   transition: background-color .16s ease, transform .16s ease;
 }
-.cpc-login__submit:hover { background: #a60018; transform: translateY(-1px); }
+
+.cpc-login__submit:hover { background: #a90019; transform: translateY(-1px); }
 .cpc-login__submit span:last-child { font-size: 21px; line-height: 1; }
-.cpc-login :is(button, a, input):focus-visible { outline: 3px solid #c6001d; outline-offset: 3px; }
-.cpc-login__submit:focus-visible { outline-color: #ef6173; }
-.cpc-login__error {
-  margin: 0 0 14px;
-  padding: 12px 14px;
-  border: 1px solid #fac5cf;
-  border-radius: 9px;
-  background: #fff2f3;
-  color: #9d1026;
-  font-size: 13px;
-  line-height: 1.5;
+
+.cpc-login :is(button, input):focus-visible {
+  outline: 3px solid #b2001c;
+  outline-offset: 3px;
 }
-.cpc-login__public {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 24px;
-  padding: 17px;
-  border: 1px solid #dfe5ee;
-  border-radius: 12px;
-  background: #f8f9fb;
+
+.cpc-login__submit:focus-visible {
+  outline-color: #ff91a3;
 }
-.cpc-login__public strong { display: block; font-size: 13px; color: #22324a; }
-.cpc-login__public p { margin: 4px 0 0; font-size: 12px; color: #64748b; }
-.cpc-login__public a {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #a90019;
-  font-size: 12px;
-  font-weight: 800;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.cpc-login__public a:hover { text-decoration: underline; }
+
 .cpc-login__footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 8px;
-  color: #64748b;
+  gap: 4px 7px;
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(99, 117, 141, .23);
+  color: #53657b;
   font-size: 11px;
   line-height: 1.5;
+  text-align: center;
 }
-.cpc-login__showcase {
-  position: relative;
-  display: flex;
-  min-height: 100dvh;
-  overflow: hidden;
-  padding: clamp(30px, 4vw, 65px);
-  background:
-    radial-gradient(ellipse at 85% 45%, rgba(187, 39, 63, .2) 0%, transparent 45%),
-    radial-gradient(ellipse at 12% 10%, rgba(59, 91, 137, .26), transparent 52%),
-    #141e2e;
-  color: #fff;
+.cpc-login__footer span + span::before { content: '·'; margin-right: 7px; }
+
+/* El formulario sigue centrado y con la fotografía visible en todas las pantallas. */
+@media (max-width: 480px) {
+  .cpc-login { padding: 15px 12px; }
+  .cpc-login__glass { padding: 25px 22px; border-radius: 19px; }
+  .cpc-login__brand img { width: 137px; }
+  .cpc-login__heading { margin-bottom: 23px; }
+  .cpc-login__heading h1 { font-size: 30px; }
 }
-.cpc-login__showcase::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: .24;
-  background-image:
-    linear-gradient(rgba(177,199,229,.12) 1px, transparent 1px),
-    linear-gradient(90deg,rgba(177,199,229,.12) 1px, transparent 1px);
-  background-size: 39px 39px;
-  mask-image: linear-gradient(to bottom, #000, transparent 88%);
-}
-.cpc-login__showcase::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  top: -135px;
-  right: -145px;
-  width: 410px;
-  height: 410px;
-  border: 1px solid rgba(255,255,255,.11);
-  border-radius: 50%;
-}
-.cpc-login__showcase-inner { position: relative; z-index: 1; width: 100%; max-width: 600px; margin: auto; }
-.cpc-login__showcase-tag {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 0 0 18px;
-  color: #ff9dad;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: .14em;
-}
-.cpc-login__showcase-tag span { width: 7px; height: 7px; border-radius: 50%; background: #ff7080; }
-.cpc-login__showcase h2 {
-  max-width: 16ch;
-  margin: 0 0 16px;
-  font-size: clamp(30px, 3vw, 46px);
-  line-height: 1.12;
-  letter-spacing: -.055em;
-  font-weight: 800;
-}
-.cpc-login__showcase h2 em { color: #ff8e9e; font-style: normal; }
-.cpc-login__showcase-description {
-  max-width: 48ch;
-  margin: 0 0 15px;
-  color: #b6c5d9;
-  font-size: 14px;
-  line-height: 1.6;
-}
-.cpc-login__tech-art {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 202px;
-  margin: 10px auto 8px;
-  max-width: 510px;
-  isolation: isolate;
-}
-.cpc-login__tech-art svg { position: relative; width: 100%; max-width: 415px; height: auto; filter: drop-shadow(0 15px 18px rgba(0,0,0,.18)); }
-.cpc-login__art-glow {
-  z-index: -1;
-  position: absolute;
-  width: 65%;
-  aspect-ratio: 1;
-  max-width: 270px;
-  border: 1px solid rgba(248,112,130,.13);
-  border-radius: 50%;
-  box-shadow: 0 0 0 30px rgba(248,112,130,.025), 0 0 0 60px rgba(248,112,130,.018);
-}
-.cpc-login__workflow { margin: 9px 0 0; }
-.cpc-login__workflow > p { margin: 0 0 11px; color: #b5c4d7; font-size: 11px; font-weight: 800; letter-spacing: .13em; }
-.cpc-login__workflow ol { list-style: none; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; padding: 0; margin: 0; }
-.cpc-login__workflow li {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 9px;
-  min-width: 0;
-  padding: 15px 12px;
-  border: 1px solid rgba(190,211,237,.18);
-  border-radius: 11px;
-  background: rgba(235,244,255,.045);
-}
-.cpc-login__workflow li span { font-size: 12px; font-weight: 800; color: #ff94a3; }
-.cpc-login__workflow li strong { font-size: 12px; font-weight: 700; color: #f6f8fc; }
-.cpc-login__showcase-footer { margin: 23px 0 0; color: #90a1bb; font-size: 11px; }
-@media (max-width: 1120px) {
-  .cpc-login { grid-template-columns: minmax(365px, 48%) minmax(0, 52%); }
-  .cpc-login__left { padding: 34px; }
-  .cpc-login__showcase { padding: 32px; }
-  .cpc-login__workflow ol { grid-template-columns: repeat(2,minmax(0,1fr)); }
-  .cpc-login__tech-art { min-height: 150px; }
-}
-@media (max-width: 760px) {
-  .cpc-login { display: block; }
-  .cpc-login__left { min-height: 100dvh; padding: 27px 24px 20px; }
-  .cpc-login__content { max-width: 470px; }
-  .cpc-login__showcase { display: none; }
-  .cpc-login__brand img { width: 150px; }
-  .cpc-login__footer { font-size: 11px; }
+@media (max-height: 680px) {
+  .cpc-login__glass { padding-top: 20px; padding-bottom: 20px; }
+  .cpc-login__brand { margin-bottom: 15px; }
+  .cpc-login__heading { margin-bottom: 15px; }
+  .cpc-login__footer { margin-top: 15px; padding-top: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cpc-login :is(input, button) { transition: none !important; transform: none !important; }
