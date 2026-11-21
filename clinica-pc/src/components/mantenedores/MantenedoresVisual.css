@@ -436,3 +436,48 @@
   .mantenedores-pro .mp-btn-primary.btn { transition: none; }
   .mantenedores-pro .mp-btn-primary.btn:hover { transform: none; }
 }
+
+
+/* Navegación por áreas: una tarea administrativa visible por vez. */
+.mantenedores-pro .mp-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .7rem;
+  margin: 0 0 1.15rem;
+}
+.mantenedores-pro .mp-tab {
+  text-align: left;
+  min-width: 0;
+  min-height: 76px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .27rem;
+  border: 1px solid var(--mp-border);
+  border-radius: 12px;
+  padding: .8rem .95rem;
+  background: var(--mp-surface);
+  color: var(--mp-ink);
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.mantenedores-pro .mp-tab:hover { border-color: var(--mp-accent); }
+.mantenedores-pro .mp-tab--activa {
+  border-color: var(--mp-accent);
+  background: var(--mp-soft-red);
+  box-shadow: inset 3px 0 0 var(--mp-accent);
+}
+.mantenedores-pro .mp-tab strong { font-size: .9rem; line-height: 1.3; }
+.mantenedores-pro .mp-tab span { font-size: .73rem; color: var(--mp-muted); line-height: 1.4; }
+.mantenedores-pro .mp-tab:focus-visible {
+  outline: 3px solid var(--mp-accent);
+  outline-offset: 2px;
+}
+.mantenedores-pro .mp-panel { min-width: 0; }
+@media (max-width: 850px) {
+  .mantenedores-pro .mp-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 440px) {
+  .mantenedores-pro .mp-tab { min-height: 68px; padding: .65rem .7rem; }
+  .mantenedores-pro .mp-tab span { font-size: .67rem; }
+}
