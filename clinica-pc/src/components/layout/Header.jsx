@@ -65,6 +65,23 @@ export default function Header({
           </div>
         </div>
 
+        {rolUsuario !== 'cliente' && (
+          <div className="pc-topbar__period">
+            <Form.Label htmlFor="periodo-global">Período académico</Form.Label>
+            <Form.Select
+              id="periodo-global"
+              value={periodoGlobal}
+              onChange={(event) => onPeriodoChange(event.target.value)}
+              aria-label="Filtrar por período académico"
+            >
+              {periodosDisponibles.map((periodo) => (
+                <option key={periodo} value={periodo}>
+                  {periodo === 'Todos' ? 'Todos los períodos' : periodo}
+                </option>
+              ))}
+            </Form.Select>
+          </div>
+        )}
         <div className="pc-topbar__actions">
           <button
             type="button"
@@ -83,23 +100,7 @@ export default function Header({
         </div>
       </div>
 
-      {rolUsuario !== 'cliente' && (
-        <div className="pc-topbar__period">
-          <Form.Label htmlFor="periodo-global">Período académico</Form.Label>
-          <Form.Select
-            id="periodo-global"
-            value={periodoGlobal}
-            onChange={(event) => onPeriodoChange(event.target.value)}
-            aria-label="Filtrar por período académico"
-          >
-            {periodosDisponibles.map((periodo) => (
-              <option key={periodo} value={periodo}>
-                {periodo === 'Todos' ? 'Todos los períodos' : periodo}
-              </option>
-            ))}
-          </Form.Select>
-        </div>
-      )}
+
     </header>
   );
 }
