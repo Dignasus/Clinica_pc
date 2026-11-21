@@ -13,27 +13,39 @@
   width: 100%;
   overflow: hidden;
   padding: clamp(18px, 4vh, 44px) clamp(14px, 3vw, 36px);
-  background-color: #14233b;
-  background-image:
-    linear-gradient(115deg, rgba(8, 22, 43, .69), rgba(18, 30, 57, .48) 48%, rgba(9, 25, 47, .69)),
-    url('../assets/login-campus.jpg');
-  background-position: center, center 48%;
-  background-size: cover;
-  background-repeat: no-repeat;
+  background: #14233b;
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
 
+/* Foto original vertical: dos capas evitan recorte excesivo en monitores panorámicos.
+   Atrás, el campus extendido con desenfoque; adelante, el encuadre más completo y nítido. */
 .cpc-login::before {
   content: '';
   position: absolute;
-  z-index: -1;
+  z-index: 0;
+  inset: -22px;
+  pointer-events: none;
+  background: url('../assets/login-campus.jpg') center / cover no-repeat;
+  filter: blur(22px) brightness(.69);
+}
+.cpc-login::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 49%, rgba(207, 225, 250, .10), transparent 60%);
+  background-image:
+    linear-gradient(115deg, rgba(8, 22, 43, .48), rgba(18, 30, 57, .31) 48%, rgba(9, 25, 47, .51)),
+    url('../assets/login-campus.jpg');
+  background-position: center, center;
+  background-size: cover, auto 120%;
+  background-repeat: no-repeat;
 }
 
 .cpc-login__glass {
+  position: relative;
+  z-index: 2;
   width: min(100%, 470px);
   min-width: 0;
   margin: auto;
@@ -74,31 +86,8 @@
 }
 
 .cpc-login__heading {
-  margin-bottom: 25px;
+  margin-bottom: 28px;
   text-align: center;
-}
-
-.cpc-login__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 0 0 11px;
-  padding: 7px 11px;
-  background: rgba(198, 0, 29, .07);
-  border: 1px solid rgba(198, 0, 29, .18);
-  border-radius: 999px;
-  color: #9f001b;
-  font-size: 10px;
-  font-weight: 850;
-  letter-spacing: .12em;
-}
-
-.cpc-login__eyebrow-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #c6001d;
 }
 
 .cpc-login__heading h1 {
@@ -242,6 +231,9 @@
 .cpc-login__footer span + span::before { content: '·'; margin-right: 7px; }
 
 /* El formulario sigue centrado y con la fotografía visible en todas las pantallas. */
+@media (max-width: 700px) {
+  .cpc-login::after { background-size: cover, auto 100%; }
+}
 @media (max-width: 480px) {
   .cpc-login { padding: 15px 12px; }
   .cpc-login__glass { padding: 25px 22px; border-radius: 19px; }
