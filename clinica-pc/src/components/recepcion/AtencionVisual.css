@@ -149,7 +149,7 @@
   background-color: var(--cp-soft);
   opacity: 1;
 }
-.cp-flow .form-check-input:checked {background-color: var(--cp-red); border-color: var(--cp-red);}
+.cp-flow .form-check-input:checked {background-color: var(--cp-action); border-color: var(--cp-action);}
 .cp-flow .form-check-input:focus {box-shadow: 0 0 0 3px rgba(230, 0, 32, .12); border-color: var(--cp-red);}
 .cp-flow .form-check-label {color: var(--cp-text);}
 .cp-flow .cp-search-form {margin: 0 0 28px;}
