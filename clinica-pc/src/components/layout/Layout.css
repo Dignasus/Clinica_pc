@@ -301,3 +301,20 @@
 @media (prefers-reduced-motion: reduce) {
   .pc-topbar button { transition: none !important; transform: none !important; }
 }
+
+/* Cabecera: primero el contexto, último el cierre de sesión. */
+.pc-topbar__main { flex-wrap: wrap; }
+.pc-topbar__period { margin-left: auto; }
+.pc-topbar__actions { margin-left: 0; }
+.pc-topbar__logout { flex-shrink: 0; }
+@media (max-width: 991px) {
+  .pc-topbar__mobile-menu { order: 0; }
+  .pc-topbar__brand { order: 1; }
+  .pc-topbar__actions { order: 2; margin-left: auto; }
+  .pc-topbar__period { order: 3; flex: 1 1 100%; margin-left: 0; }
+}
+@media (max-width: 380px) {
+  .pc-topbar { padding-inline: 10px; }
+  .pc-topbar__main { gap: 8px; }
+  .pc-topbar .pc-topbar__logout { padding-inline: 10px; }
+}
