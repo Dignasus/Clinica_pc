@@ -40,6 +40,7 @@ function leerCSV(texto) {
 export default function ParametrosMantenedores({ modoOscuro = false }) {
   const { datos, dispatch } = useClinica();
   const [aviso, setAviso] = useState(null);
+  const [seccionActiva, setSeccionActiva] = useState('jornadas');
   const rolesPermitidos = (datos.roles || []).map((r) => r.id);
   const etiquetasRol = Object.fromEntries((datos.roles || []).map((r) => [r.id, r.nombre]));
   const jornadas = [...datos.jornadas].sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -188,7 +189,24 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Alert>
       )}
 
-      {import.meta.env.DEV && (
+      <nav className="mp-tabs" aria-label="Áreas de administración">
+        {[
+          ['jornadas', 'Jornadas', 'Calendario y preinscripciones'],
+          ['personal', 'Personal y roles', 'Integrantes y permisos'],
+          ['checklists', 'Checklists', 'Plantillas de trabajo'],
+          ['herramientas', 'Herramientas', 'Opciones de demostración'],
+        ].map(([id, titulo, descripcion]) => (
+          <button key={id} type="button"
+            className={`mp-tab ${seccionActiva === id ? 'mp-tab--activa' : ''}`}
+            aria-current={seccionActiva === id ? 'page' : undefined}
+            onClick={() => setSeccionActiva(id)}>
+            <strong>{titulo}</strong>
+            <span>{descripcion}</span>
+          </button>
+        ))}
+      </nav>
+
+      {seccionActiva === 'herramientas' && import.meta.env.DEV && (
         <Card className="mp-section">
           <Card.Header className="mp-section-header">
             <span className="mp-step">QA</span>
@@ -224,6 +242,8 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Card>
       )}
 
+      {seccionActiva === 'jornadas' && (
+        <div className="mp-panel" aria-label="Jornadas">
       <Card className="mp-section">
         <Card.Header className="mp-section-header">
           <span className="mp-step">01</span>
@@ -334,6 +354,11 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Card.Body>
       </Card>
 
+        </div>
+      )}
+
+      {seccionActiva === 'personal' && (
+        <div className="mp-panel" aria-label="Personal y roles">
       <Card className="mp-section">
         <Card.Header className="mp-section-header">
           <span className="mp-step">03</span>
@@ -411,7 +436,11 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
       </Card>
 
       <AdministracionRoles />
+        </div>
+      )}
 
+      {seccionActiva === 'checklists' && (
+        <div className="mp-panel" aria-label="Checklists">
       <Card className="mp-section">
         <Card.Header className="mp-section-header">
           <span className="mp-step">04</span>
@@ -468,6 +497,11 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Card.Body>
       </Card>
 
+        </div>
+      )}
+
+      {seccionActiva === 'herramientas' && (
+        <div className="mp-panel" aria-label="Herramientas">
       <Card className="mp-section mp-section-danger">
         <Card.Header className="mp-section-header">
           <span className="mp-step">05</span>
@@ -488,6 +522,8 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
           </div>
         </Card.Body>
       </Card>
+        </div>
+      )}
     </section>
   );
 }
