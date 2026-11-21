@@ -6,7 +6,7 @@
   --hist-muted: #64748b;
   --hist-line: #dde4ed;
   --hist-hover: #f7f8fb;
-  --hist-brand: #e60020;
+  --hist-brand: #c6001d;
   --hist-brand-soft: #fff0f2;
   --hist-focus: rgba(230, 0, 32, .16);
   color: var(--hist-text);
@@ -23,7 +23,7 @@
   --hist-muted: #a6b1c3;
   --hist-line: #383e48;
   --hist-hover: #292d36;
-  --hist-brand: #ff4355;
+  --hist-brand: #ff7080;
   --hist-brand-soft: #37262d;
   --hist-focus: rgba(255, 67, 85, .22);
 }
@@ -240,4 +240,32 @@
 @media (max-width: 620px) {
   .hc .hist-accordion-trigger { padding: 13px 15px; }
   .hc .hist-accordion-actions > div { width: 100%; }
+}
+
+/* Controles de lectura y foco perceptibles en el historial. */
+.hc .hist-btn.btn,
+.hc .hist-control.form-control,
+.hc .hist-control.form-select { min-height: 44px; }
+.hc .hist-btn.btn { font-size: 13px; }
+.hc .hist-btn.btn:focus-visible,
+.hc :is(button, input, select, textarea, a):focus-visible {
+  outline: 3px solid var(--hist-brand);
+  outline-offset: 2px;
+}
+.hc .hist-btn--red.btn { background: #c6001d; border-color: #c6001d; color: #fff; }
+.hc .hist-btn--red.btn:hover { background: #a90019; border-color: #a90019; color: #fff; }
+.hc .hist-table thead th { font-size: 12px; }
+.hc .hist-table tbody td,
+.hc .hist-table .hist-cell-title,
+.hc .hist-table .hist-cell-subtitle { font-size: 13px; }
+.hc .form-label,
+.hc .hist-stat span,
+.hc .hist-empty p,
+.hc .hist-note.alert,
+.hc .hist-accordion-description { font-size: 13px; }
+.hc .hist-accordion-title { font-size: 15px; }
+.hc .hist-section-explanation,
+.hc .hist-detail-hero p { max-width: 75ch; }
+@media (prefers-reduced-motion: reduce) {
+  .hc :is(.hist-btn, .hist-accordion-trigger) { transition: none !important; transform: none !important; }
 }
