@@ -284,3 +284,45 @@
   .cp-flow .cp-back-button,
   .cp-flow :is(.form-control,.form-select) {transition: none;}
 }
+
+
+/* Formulario presencial: tres etapas claras y acciones visibles. */
+.cp-flow .cp-register-steps {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .7rem; margin-bottom: 1.1rem;
+}
+.cp-flow .cp-register-step {
+  display: flex; align-items: center; gap: .7rem; min-width: 0;
+  border: 1px solid var(--cp-border); border-radius: 11px;
+  padding: .85rem; background: var(--cp-card, var(--cp-soft));
+  color: var(--cp-text); text-align: left;
+}
+.cp-flow .cp-register-step span {
+  flex: 0 0 27px; display: grid; place-items: center;
+  width: 27px; height: 27px; border-radius: 50%; font-size: 12px;
+  font-weight: 800; color: var(--cp-muted); background: var(--cp-soft);
+}
+.cp-flow .cp-register-step strong { font-size: 12px; line-height: 1.4; }
+.cp-flow .cp-register-step--active { border-color: #c6001d; box-shadow: inset 0 -3px 0 #c6001d; }
+.cp-flow .cp-register-step--active span { background: #c6001d; color: #fff; }
+.cp-flow .cp-register-step:not(:disabled) { cursor: pointer; }
+.cp-flow .cp-register-step:disabled { opacity: .58; cursor: default; }
+.cp-flow .cp-register-step:focus-visible { outline: 3px solid #c6001d; outline-offset: 2px; }
+.cp-flow .cp-register-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+.cp-flow .cp-register-actions .btn { min-width: min(100%, 190px); }
+.cp-flow .cp-register-consent-summary {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 15px;
+}
+.cp-flow .cp-register-consent-summary p {
+  margin: 0; font-size: 13px; overflow-wrap: anywhere;
+  padding: 12px; border: 1px solid var(--cp-border);
+  border-radius: 9px; background: var(--cp-soft);
+}
+@media (max-width: 640px) {
+  .cp-flow .cp-register-steps { gap: .35rem; }
+  .cp-flow .cp-register-step { padding: .55rem .35rem; flex-direction: column; text-align: center; }
+  .cp-flow .cp-register-step strong { font-size: 11px; }
+  .cp-flow .cp-register-consent-summary { grid-template-columns: 1fr; }
+  .cp-flow .cp-register-actions .btn { width: 100%; }
+}
