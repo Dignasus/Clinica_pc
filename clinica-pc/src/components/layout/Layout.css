@@ -283,3 +283,21 @@
 .pc-sidebar--light .pc-sidebar__arrow { color: #c90023; }
 .pc-sidebar--light .pc-sidebar__footer { border-top-color: #dfe5ed; color: #667891; }
 .pc-sidebar--light .pc-sidebar__item:focus-visible { outline-color: #d50024 !important; }
+
+/* Navegación global: accesibilidad táctil y teclado. */
+.pc-sidebar .pc-sidebar__item { min-height: 44px; font-size: 13px; }
+.pc-sidebar__section-title { font-size: 12px; }
+.pc-topbar .pc-topbar__icon-button { min-width: 44px; min-height: 44px; width: 44px; height: 44px; }
+.pc-topbar .pc-topbar__logout { min-height: 44px; font-size: 13px; }
+.pc-topbar__period .form-select { min-height: 44px; font-size: 13px; }
+.pc-topbar__period label { font-size: 13px; }
+.pc-sidebar :is(button, a):focus-visible,
+.pc-topbar :is(button, select, a):focus-visible {
+  outline: 3px solid #c6001d;
+  outline-offset: 3px;
+}
+.pc-topbar--dark :is(button, select, a):focus-visible,
+.pc-sidebar--dark :is(button, a):focus-visible { outline-color: #ff7080; }
+@media (prefers-reduced-motion: reduce) {
+  .pc-topbar button { transition: none !important; transform: none !important; }
+}
