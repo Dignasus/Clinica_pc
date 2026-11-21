@@ -201,3 +201,43 @@
   .hc .hist-control.form-control, .hc .hist-control.form-select, .hc .hist-btn.btn { transition: none; }
   .hc .hist-btn--outline.btn:hover { transform: none; }
 }
+
+
+/* Ficha resumida: módulos desplegables con estado y acciones visibles. */
+.hc .hist-accordion-header.card-header { padding: 0; border-bottom: 0; }
+.hc .hist-accordion-trigger {
+  background: transparent;
+  color: var(--hist-text);
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  padding: 16px 20px;
+  cursor: pointer;
+}
+.hc .hist-accordion-trigger:hover { background: var(--hist-tint); }
+.hc .hist-accordion-trigger:focus-visible {
+  outline: 3px solid var(--hist-brand);
+  outline-offset: -3px;
+  border-radius: 12px;
+}
+.hc .hist-accordion-label { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.hc .hist-accordion-title { font-size: 14px; line-height: 1.4; font-weight: 800; }
+.hc .hist-accordion-description { font-size: 12px; line-height: 1.45; color: var(--hist-muted); }
+.hc .hist-accordion-symbol {
+  flex-shrink: 0; display: grid; place-items: center;
+  width: 30px; height: 30px; border: 1px solid var(--hist-line);
+  border-radius: 9px; color: var(--hist-muted); font-size: 20px;
+}
+.hc .hist-accordion-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px; margin: 6px 0 15px; color: var(--hist-muted); font-size: 12px;
+}
+.hc .hist-accordion-actions > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.hc .hist-detail-section .hist-card__body { border-top: 1px solid var(--hist-line); }
+@media (max-width: 620px) {
+  .hc .hist-accordion-trigger { padding: 13px 15px; }
+  .hc .hist-accordion-actions > div { width: 100%; }
+}
