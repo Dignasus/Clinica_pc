@@ -41,6 +41,9 @@
   background-position: center, center;
   background-size: cover, auto 120%;
   background-repeat: no-repeat;
+  /* Funde suavemente los extremos de la foto completa con el fondo desenfocado. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 24%, #000 76%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 24%, #000 76%, transparent);
 }
 
 .cpc-login__glass {
@@ -232,7 +235,11 @@
 
 /* El formulario sigue centrado y con la fotografía visible en todas las pantallas. */
 @media (max-width: 700px) {
-  .cpc-login::after { background-size: cover, auto 100%; }
+  .cpc-login::after {
+    background-size: cover, auto 100%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 @media (max-width: 480px) {
   .cpc-login { padding: 15px 12px; }
