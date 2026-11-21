@@ -7,7 +7,8 @@
   --cp-line: #e1e6ec;
   --cp-soft: #f6f8fb;
   --cp-soft-hover: #f0f3f8;
-  --cp-red: #e60020;
+  --cp-red: #c6001d;
+  --cp-action: #c6001d;
   --cp-red-soft: #fff1f3;
   --cp-shadow: 0 6px 18px rgba(20, 33, 54, .035);
   color: var(--cp-text);
@@ -23,6 +24,7 @@
   --cp-soft: #292d35;
   --cp-soft-hover: #323740;
   --cp-red-soft: #431f28;
+  --cp-red: #ff7080; /* texto e iconos con contraste en modo oscuro */
   --cp-shadow: none;
 }
 .cp-flow .cp-page-header {
@@ -158,8 +160,8 @@
   border-radius: 9px;
   padding: 11px 20px;
   min-height: 43px;
-  background: var(--cp-red) !important;
-  border: 1px solid var(--cp-red) !important;
+  background: var(--cp-action) !important;
+  border: 1px solid var(--cp-action) !important;
   color: #fff !important;
   font-size: 13px;
   font-weight: 750;
@@ -325,4 +327,33 @@
   .cp-flow .cp-register-step strong { font-size: 11px; }
   .cp-flow .cp-register-consent-summary { grid-template-columns: 1fr; }
   .cp-flow .cp-register-actions .btn { width: 100%; }
+}
+
+/* Controles cómodos y contenido legible en recepción. */
+.cp-flow :is(.form-control, .form-select) { min-height: 44px; font-size: 14px; }
+.cp-flow .btn { min-height: 44px; }
+.cp-flow .cp-primary-button.btn,
+.cp-flow .cp-outline-button.btn,
+.cp-flow .cp-back-button.btn { font-size: 13px; }
+.cp-flow .cp-field-label,
+.cp-flow .form-label { font-size: 13px; }
+.cp-flow .cp-page-heading p,
+.cp-flow .cp-list-heading p,
+.cp-flow .cp-section-heading p,
+.cp-flow .cp-helper-text,
+.cp-flow .cp-results-table,
+.cp-flow .cp-table-empty p,
+.cp-flow .cp-detail-list dt,
+.cp-flow .cp-detail-list dd { font-size: 13px; }
+.cp-flow .cp-results-table th { font-size: 12px; }
+.cp-flow .cp-flow-description,
+.cp-flow .cp-page-heading p,
+.cp-flow .cp-register-consent-summary { max-width: 75ch; }
+.cp-flow :is(button, input, select, textarea, a):focus-visible {
+  outline: 3px solid var(--cp-red);
+  outline-offset: 2px;
+}
+.cp-flow .cp-primary-button:focus-visible { outline-color: #ff8fa0; }
+@media (prefers-reduced-motion: reduce) {
+  .cp-flow :is(.btn, .cp-register-step) { transition: none !important; transform: none !important; }
 }
