@@ -441,7 +441,7 @@
 /* Navegación por áreas: una tarea administrativa visible por vez. */
 .mantenedores-pro .mp-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: .7rem;
   margin: 0 0 1.15rem;
 }
