@@ -293,7 +293,7 @@
 }
 .cp-flow .cp-register-step {
   display: flex; align-items: center; gap: .7rem; min-width: 0;
-  border: 1px solid var(--cp-border); border-radius: 11px;
+  border: 1px solid var(--cp-line); border-radius: 11px;
   padding: .85rem; background: var(--cp-card, var(--cp-soft));
   color: var(--cp-text); text-align: left;
 }
@@ -316,7 +316,7 @@
 }
 .cp-flow .cp-register-consent-summary p {
   margin: 0; font-size: 13px; overflow-wrap: anywhere;
-  padding: 12px; border: 1px solid var(--cp-border);
+  padding: 12px; border: 1px solid var(--cp-line);
   border-radius: 9px; background: var(--cp-soft);
 }
 @media (max-width: 640px) {
