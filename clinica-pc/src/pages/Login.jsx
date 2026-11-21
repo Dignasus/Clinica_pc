@@ -56,10 +56,6 @@ export default function Login() {
         </header>
 
         <div className="cpc-login__heading">
-          <p className="cpc-login__eyebrow">
-            <span aria-hidden="true" className="cpc-login__eyebrow-dot" />
-            PORTAL DE PERSONAL
-          </p>
           <h1 id="cpc-login-title">Clínica del PC<span className="cpc-login__period">.</span></h1>
           <p>Sistema de gestión de servicios técnicos</p>
         </div>
@@ -72,7 +68,7 @@ export default function Login() {
             type="text"
             value={credenciales.usuario}
             onChange={handleChange}
-            placeholder="Ingresa tu usuario"
+            placeholder="ejemplo@inacapmail.cl"
             autoComplete="username"
             required
           />
