@@ -41,8 +41,14 @@ test('React escapa contenido libre al renderizarlo como texto', () => {
   assert.ok(img.includes('&lt;img'));
   assert.ok(!img.includes('<img'));
 });
+test('mensajes claros para nombres y apellidos inválidos', () => {
+  assert.match(validarFormularioRegistro({ ...valido(), nombre: 'Cristian123' }), /Nombre: usa solo letras/);
+  assert.match(validarFormularioRegistro({ ...valido(), apellidoPaterno: 'Pérez9' }), /Apellido paterno: usa solo letras/);
+  assert.match(validarFormularioRegistro({ ...valido(), nombre: 'A' }), /al menos 2 caracteres/);
+  assert.equal(validarFormularioRegistro({ ...valido(), nombre: 'María José' }), null);
+});
 test('rechaza nombre con etiqueta HTML', () => {
-  assert.match(validarFormularioRegistro({ ...valido(), nombre: '<script>' }), /Nombre/);
+  assert.match(validarFormularioRegistro({ ...valido(), nombre: '<script>' }), /Nombre: usa solo letras/);
 });
 test('rechaza caracteres invisibles de control en textos estructurados', () => {
   assert.match(validarFormularioRegistro({ ...valido(), sector: 'Centro\u202Eoculto' }), /Sector/);
