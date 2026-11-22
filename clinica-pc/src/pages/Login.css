@@ -18,10 +18,18 @@
     linear-gradient(110deg, rgba(9, 21, 41, .56), rgba(12, 29, 52, .28) 50%, rgba(9, 21, 41, .56)),
     url('../assets/login-campus.jpg');
   background-size: cover;
-  background-position: center 48%;
+  background-position: 50% 28%;
   background-repeat: no-repeat;
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+}
+
+/* Encuadre de prueba según el espacio disponible en cada pantalla. */
+@media (min-width: 1200px) {
+  .cpc-login { background-position: 50% 24%; }
+}
+@media (max-width: 768px) {
+  .cpc-login { background-position: 52% 35%; }
 }
 
 /* Foto continua, recorte proporcional sin difuminar ni estirar los laterales. */
