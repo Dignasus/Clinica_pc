@@ -392,7 +392,8 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
         </Alert>
       )}
 
-      <Form onSubmit={handleSubmit} className="cp-qr__form">
+      {/* La validación se realiza en React para mostrar mensajes claros y consistentes. */}
+      <Form noValidate onSubmit={handleSubmit} className="cp-qr__form">
         <section className="cp-qr__section" aria-labelledby="qr-paso-jornada">
           <div className="cp-qr__section-header">
             <span className="cp-qr__step-number" aria-hidden="true">01</span>
@@ -435,7 +436,8 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
             </div>
           </div>
           <div className="cp-qr__section-body">
-            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
+            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro}
+              errorCorreo={error.startsWith('Correo electrónico inválido.') ? error : ''} />
           </div>
         </section>
 
