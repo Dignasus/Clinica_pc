@@ -9,6 +9,7 @@ import TerminosLegales from './inscripcion/TerminosLegales.jsx';
 
 import { useClinica } from '../context/clinicaContextBase.js';
 import { normalizarRut, validarRut } from '../utils/rut.js';
+import { normalizarCampoRegistro, validarFormularioRegistro } from '../utils/validacionEntradas.js';
 import {
   jornadaPermiteInscripcion,
   obtenerEstadoJornada,
@@ -167,6 +168,11 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
       );
     }
 
+    // Validación compartida de longitudes, formatos y caracteres de control.
+    // React presenta diagnósticos/observaciones como texto, nunca como HTML.
+    const errorEntrada = validarFormularioRegistro(formData);
+    if (errorEntrada) return setError(errorEntrada);
+
     const rut = normalizarRut(formData.rut);
 
     const existente = datos.propietarios.find(
@@ -209,23 +215,23 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
     const propietario = {
       id: propietarioId,
       rut,
-      nombre: formData.nombre.trim(),
-      apellidoPaterno: formData.apellidoPaterno.trim(),
-      apellidoMaterno: formData.apellidoMaterno.trim(),
-      telefono: formData.telefono.trim(),
-      correo: formData.correo.trim(),
+      nombre: normalizarCampoRegistro('nombre', formData.nombre),
+      apellidoPaterno: normalizarCampoRegistro('apellidoPaterno', formData.apellidoPaterno),
+      apellidoMaterno: normalizarCampoRegistro('apellidoMaterno', formData.apellidoMaterno),
+      telefono: normalizarCampoRegistro('telefono', formData.telefono),
+      correo: normalizarCampoRegistro('correo', formData.correo),
       region,
-      comuna: formData.comuna.trim(),
-      sector: formData.sector.trim(),
+      comuna: normalizarCampoRegistro('comuna', formData.comuna),
+      sector: normalizarCampoRegistro('sector', formData.sector),
     };
 
     const dispositivo = {
       id: dispositivoId,
       propietarioId,
       tipo: 'pendiente',
-      marca: formData.marcaEquipo.trim(),
-      modelo: formData.modeloEquipo.trim(),
-      numeroSerie: formData.numeroSerie.trim(),
+      marca: normalizarCampoRegistro('marcaEquipo', formData.marcaEquipo),
+      modelo: normalizarCampoRegistro('modeloEquipo', formData.modeloEquipo),
+      numeroSerie: normalizarCampoRegistro('numeroSerie', formData.numeroSerie),
     };
 
     const atencion = {
@@ -235,7 +241,7 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
       servicioIds,
       origenRegistro: 'qr',
       diagnosticoPropietario:
-        formData.diagnosticoPropietario.trim(),
+        normalizarCampoRegistro('diagnosticoPropietario', formData.diagnosticoPropietario),
       fechaPreinscripcion: fechaRegistro,
       fechaAceptacionTerminos: fechaRegistro,
       tecnicoIds: [],
