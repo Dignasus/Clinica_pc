@@ -1,5 +1,6 @@
 
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { LIMITES_REGISTRO } from '../../utils/validacionEntradas.js';
 
 const camposEquipo = [
   {
@@ -78,6 +79,7 @@ function CampoEquipo({ campo, valor, onChange, modoOscuro }) {
     value: valor ?? '',
     onChange,
     required: Boolean(campo.required),
+    maxLength: LIMITES_REGISTRO[campo.name],
     className: clases,
   };
 

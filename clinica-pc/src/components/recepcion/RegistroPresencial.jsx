@@ -7,6 +7,7 @@ import DatosEquipo from '../inscripcion/DatosEquipo.jsx';
 
 import { useClinica } from '../../context/clinicaContextBase.js';
 import { normalizarRut, validarRut } from '../../utils/rut.js';
+import { normalizarCampoRegistro, validarFormularioRegistro } from '../../utils/validacionEntradas.js';
 import { fechaLocal, obtenerEstadoJornada } from '../../utils/jornadas.js';
 import {
   encontrarRegionDeComuna,
@@ -179,9 +180,8 @@ export default function RegistroPresencial({
         .some((campo) => !String(formData[campo] ?? '').trim())) {
         return 'Completa los datos obligatorios del propietario antes de continuar.';
       }
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.correo.trim())) {
-        return 'Ingresa un correo válido para el propietario.';
-      }
+      const errorPropietario = validarFormularioRegistro(formData, 'propietario');
+      if (errorPropietario) return errorPropietario;
     }
     if (paso === 2) {
       if (['marcaEquipo', 'modeloEquipo', 'diagnosticoPropietario']
@@ -191,6 +191,8 @@ export default function RegistroPresencial({
       if (!Object.values(formData.servicios).some(Boolean)) {
         return 'Selecciona al menos un servicio para el dispositivo.';
       }
+      const errorEquipo = validarFormularioRegistro(formData, 'equipo');
+      if (errorEquipo) return errorEquipo;
     }
     return '';
   };
@@ -390,6 +392,10 @@ export default function RegistroPresencial({
       );
     }
 
+    // El registro presencial no permite evadir los límites de los pasos.
+    const errorEntrada = validarFormularioRegistro(formData);
+    if (errorEntrada) return setError(errorEntrada);
+
     const propietarioId =
       propietarioActual?.id ||
       `PROP-${crypto.randomUUID()}`;
@@ -501,14 +507,14 @@ export default function RegistroPresencial({
     const propietario = {
       id: propietarioId,
       rut,
-      nombre: formData.nombre.trim(),
-      apellidoPaterno: formData.apellidoPaterno.trim(),
-      apellidoMaterno: formData.apellidoMaterno.trim(),
-      telefono: formData.telefono.trim(),
-      correo: formData.correo.trim(),
+      nombre: normalizarCampoRegistro('nombre', formData.nombre),
+      apellidoPaterno: normalizarCampoRegistro('apellidoPaterno', formData.apellidoPaterno),
+      apellidoMaterno: normalizarCampoRegistro('apellidoMaterno', formData.apellidoMaterno),
+      telefono: normalizarCampoRegistro('telefono', formData.telefono),
+      correo: normalizarCampoRegistro('correo', formData.correo),
       region,
-      comuna: formData.comuna.trim(),
-      sector: formData.sector.trim(),
+      comuna: normalizarCampoRegistro('comuna', formData.comuna),
+      sector: normalizarCampoRegistro('sector', formData.sector),
     };
 
     // Datos del dispositivo
@@ -517,9 +523,9 @@ export default function RegistroPresencial({
       dispositivoExistenteId: anterior?.id || null,
       propietarioId,
       tipo: 'pendiente',
-      marca: formData.marcaEquipo.trim(),
-      modelo: formData.modeloEquipo.trim(),
-      numeroSerie: formData.numeroSerie.trim(),
+      marca: normalizarCampoRegistro('marcaEquipo', formData.marcaEquipo),
+      modelo: normalizarCampoRegistro('modeloEquipo', formData.modeloEquipo),
+      numeroSerie: normalizarCampoRegistro('numeroSerie', formData.numeroSerie),
     };
 
     // Nueva atención independiente
@@ -531,7 +537,7 @@ export default function RegistroPresencial({
       estado: 'preinscrito',
       origenRegistro: 'presencial',
       diagnosticoPropietario:
-        formData.diagnosticoPropietario.trim(),
+        normalizarCampoRegistro('diagnosticoPropietario', formData.diagnosticoPropietario),
       fechaPreinscripcion: ahora,
       // Recepción no puede aceptar el consentimiento en nombre del cliente.
       fechaAceptacionTerminos: null,
@@ -581,6 +587,11 @@ export default function RegistroPresencial({
           </Button>
         </div>
       </div>
+
+      <Alert variant="secondary" className="small" role="note">
+        <strong>Solo demostración:</strong> registra datos ficticios. Los datos quedan
+        en el almacenamiento local del navegador, sin cifrado ni sincronización.
+      </Alert>
 
       <Form onSubmit={registrar} className="cp-register-form">
         <nav className="cp-register-steps" aria-label="Pasos del registro presencial">

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import './inscripcion/InscripcionQRVisual.css';
 
@@ -9,6 +9,8 @@ import TerminosLegales from './inscripcion/TerminosLegales.jsx';
 
 import { useClinica } from '../context/clinicaContextBase.js';
 import { normalizarRut, validarRut } from '../utils/rut.js';
+import { normalizarCampoRegistro, validarFormularioRegistro } from '../utils/validacionEntradas.js';
+import { campoParaErrorInscripcion } from '../utils/focoErrorInscripcion.js';
 import {
   jornadaPermiteInscripcion,
   obtenerEstadoJornada,
@@ -79,6 +81,27 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
   const [jornadaId, setJornadaId] = useState('');
   const [confirmacion, setConfirmacion] = useState(null);
   const [error, setError] = useState('');
+  const [intentosEnvio, setIntentosEnvio] = useState(0);
+  const formularioRef = useRef(null);
+  const avisoErrorRef = useRef(null);
+
+  // Al enviar un formulario largo, lleva al usuario al campo que debe corregir.
+  // También se ejecuta si se vuelve a enviar con el mismo error.
+  useEffect(() => {
+    if (!error) return;
+
+    const campo = campoParaErrorInscripcion(error, formData);
+    const control = campo ? formularioRef.current?.querySelector(`[name="${campo}"]`) : null;
+    const destino = control ?? avisoErrorRef.current;
+    if (!destino) return;
+
+    destino.focus({ preventScroll: true });
+    const reducirMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    destino.scrollIntoView({
+      behavior: reducirMovimiento ? 'instant' : 'smooth',
+      block: 'center',
+    });
+  }, [error, intentosEnvio, formData]);
 
   const jornadasDisponibles = [...datos.jornadas]
     .filter(jornadaPermiteInscripcion)
@@ -109,6 +132,7 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIntentosEnvio((actual) => actual + 1);
     setError('');
 
     const jornada = jornadasDisponibles.find(
@@ -167,6 +191,11 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
       );
     }
 
+    // Validación compartida de longitudes, formatos y caracteres de control.
+    // React presenta diagnósticos/observaciones como texto, nunca como HTML.
+    const errorEntrada = validarFormularioRegistro(formData);
+    if (errorEntrada) return setError(errorEntrada);
+
     const rut = normalizarRut(formData.rut);
 
     const existente = datos.propietarios.find(
@@ -209,23 +238,23 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
     const propietario = {
       id: propietarioId,
       rut,
-      nombre: formData.nombre.trim(),
-      apellidoPaterno: formData.apellidoPaterno.trim(),
-      apellidoMaterno: formData.apellidoMaterno.trim(),
-      telefono: formData.telefono.trim(),
-      correo: formData.correo.trim(),
+      nombre: normalizarCampoRegistro('nombre', formData.nombre),
+      apellidoPaterno: normalizarCampoRegistro('apellidoPaterno', formData.apellidoPaterno),
+      apellidoMaterno: normalizarCampoRegistro('apellidoMaterno', formData.apellidoMaterno),
+      telefono: normalizarCampoRegistro('telefono', formData.telefono),
+      correo: normalizarCampoRegistro('correo', formData.correo),
       region,
-      comuna: formData.comuna.trim(),
-      sector: formData.sector.trim(),
+      comuna: normalizarCampoRegistro('comuna', formData.comuna),
+      sector: normalizarCampoRegistro('sector', formData.sector),
     };
 
     const dispositivo = {
       id: dispositivoId,
       propietarioId,
       tipo: 'pendiente',
-      marca: formData.marcaEquipo.trim(),
-      modelo: formData.modeloEquipo.trim(),
-      numeroSerie: formData.numeroSerie.trim(),
+      marca: normalizarCampoRegistro('marcaEquipo', formData.marcaEquipo),
+      modelo: normalizarCampoRegistro('modeloEquipo', formData.modeloEquipo),
+      numeroSerie: normalizarCampoRegistro('numeroSerie', formData.numeroSerie),
     };
 
     const atencion = {
@@ -235,7 +264,7 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
       servicioIds,
       origenRegistro: 'qr',
       diagnosticoPropietario:
-        formData.diagnosticoPropietario.trim(),
+        normalizarCampoRegistro('diagnosticoPropietario', formData.diagnosticoPropietario),
       fechaPreinscripcion: fechaRegistro,
       fechaAceptacionTerminos: fechaRegistro,
       tecnicoIds: [],
@@ -375,13 +404,19 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
         </div>
       </header>
 
+      <Alert variant="secondary" className="small" role="note">
+        <strong>Demostración académica:</strong> usa datos ficticios. La información se
+        guarda únicamente en este navegador; no ingreses RUT ni contactos reales.
+      </Alert>
+
       {error && (
-        <Alert variant="danger" role="alert" dismissible onClose={() => setError('')}>
+        <Alert ref={avisoErrorRef} tabIndex={-1} variant="danger" role="alert" dismissible onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
-      <Form onSubmit={handleSubmit} className="cp-qr__form">
+      {/* La validación se realiza en React para mostrar mensajes claros y consistentes. */}
+      <Form ref={formularioRef} noValidate onSubmit={handleSubmit} className="cp-qr__form">
         <section className="cp-qr__section" aria-labelledby="qr-paso-jornada">
           <div className="cp-qr__section-header">
             <span className="cp-qr__step-number" aria-hidden="true">01</span>
@@ -395,6 +430,7 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
               <Form.Label>Selecciona la jornada <span aria-hidden="true">*</span></Form.Label>
               <Form.Select
                 required
+                name="jornadaId"
                 value={jornadaId}
                 onChange={(e) => setJornadaId(e.target.value)}
               >
@@ -424,7 +460,8 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
             </div>
           </div>
           <div className="cp-qr__section-body">
-            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro} />
+            <DatosPersonales formData={formData} onChange={handleChange} modoOscuro={modoOscuro}
+              errorCorreo={error.startsWith('Correo electrónico inválido.') ? error : ''} />
           </div>
         </section>
 
