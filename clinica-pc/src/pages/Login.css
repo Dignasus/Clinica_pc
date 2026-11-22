@@ -1,7 +1,5 @@
-/* Clínica del PC · Prueba visual A: arquitectura diurna INACAP San Pedro de la Paz.
-   Fotografías publicadas por INACAP (recursos externos temporales para demo).
-   Antes de publicar, obtener permiso e incorporar el recurso autorizado localmente.
-   Fuente: https://portales.inacap.cl/noticias/destacadas/2019/nueva-sede-san-pedro-de-la-paz-inicia-actividades-academicas-en-marzo-de-2020-con-oferta-de-17-carreras */
+/* Clínica del PC · fondo A local: ilustración arquitectónica diurna.
+   Sin imágenes remotas; conserva el formulario glass y el panel lateral. */
 .cpc-login,
 .cpc-login * { box-sizing: border-box; }
 
@@ -21,7 +19,8 @@
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
 
-/* Fachada diurna de INACAP San Pedro de la Paz; segunda foto de la misma sede como respaldo. */
+/* Arquitectura diurna ilustrada, local: no depende de servidores externos.
+   Si se consigue una fotografía con permiso, podrá reemplazar solo este recurso. */
 .cpc-login::after {
   content: '';
   position: absolute;
@@ -29,11 +28,10 @@
   inset: 0 38% 0 0;
   pointer-events: none;
   background-image:
-    linear-gradient(130deg, rgba(9, 24, 45, .06), rgba(9, 24, 45, .16)),
-    url('https://portales.inacap.cl/Assets/imagenes/Comunicaciones/2019/diciembre/Sede-San-Pedro-de-la-Paz/san_pedro_de_la_oaz_800x600.jpg'),
-    url('https://portales.inacap.cl/Assets/imagenes/san-pedro-de-la-paz/2023/enero/foto-sede-spp.jpg');
+    linear-gradient(130deg, rgba(9, 24, 45, .07), rgba(9, 24, 45, .13)),
+    url('../assets/login-campus-arquitectura.svg');
   background-size: cover;
-  background-position: center 52%;
+  background-position: center 51%;
   background-repeat: no-repeat;
 }
 
