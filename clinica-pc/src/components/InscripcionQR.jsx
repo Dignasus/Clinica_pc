@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import './inscripcion/InscripcionQRVisual.css';
 
@@ -10,6 +10,7 @@ import TerminosLegales from './inscripcion/TerminosLegales.jsx';
 import { useClinica } from '../context/clinicaContextBase.js';
 import { normalizarRut, validarRut } from '../utils/rut.js';
 import { normalizarCampoRegistro, validarFormularioRegistro } from '../utils/validacionEntradas.js';
+import { campoParaErrorInscripcion } from '../utils/focoErrorInscripcion.js';
 import {
   jornadaPermiteInscripcion,
   obtenerEstadoJornada,
@@ -80,6 +81,27 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
   const [jornadaId, setJornadaId] = useState('');
   const [confirmacion, setConfirmacion] = useState(null);
   const [error, setError] = useState('');
+  const [intentosEnvio, setIntentosEnvio] = useState(0);
+  const formularioRef = useRef(null);
+  const avisoErrorRef = useRef(null);
+
+  // Al enviar un formulario largo, lleva al usuario al campo que debe corregir.
+  // También se ejecuta si se vuelve a enviar con el mismo error.
+  useEffect(() => {
+    if (!error) return;
+
+    const campo = campoParaErrorInscripcion(error, formData);
+    const control = campo ? formularioRef.current?.querySelector(`[name="${campo}"]`) : null;
+    const destino = control ?? avisoErrorRef.current;
+    if (!destino) return;
+
+    destino.focus({ preventScroll: true });
+    const reducirMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    destino.scrollIntoView({
+      behavior: reducirMovimiento ? 'instant' : 'smooth',
+      block: 'center',
+    });
+  }, [error, intentosEnvio, formData]);
 
   const jornadasDisponibles = [...datos.jornadas]
     .filter(jornadaPermiteInscripcion)
@@ -110,6 +132,7 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setIntentosEnvio((actual) => actual + 1);
     setError('');
 
     const jornada = jornadasDisponibles.find(
@@ -387,13 +410,13 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
       </Alert>
 
       {error && (
-        <Alert variant="danger" role="alert" dismissible onClose={() => setError('')}>
+        <Alert ref={avisoErrorRef} tabIndex={-1} variant="danger" role="alert" dismissible onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
       {/* La validación se realiza en React para mostrar mensajes claros y consistentes. */}
-      <Form noValidate onSubmit={handleSubmit} className="cp-qr__form">
+      <Form ref={formularioRef} noValidate onSubmit={handleSubmit} className="cp-qr__form">
         <section className="cp-qr__section" aria-labelledby="qr-paso-jornada">
           <div className="cp-qr__section-header">
             <span className="cp-qr__step-number" aria-hidden="true">01</span>
@@ -407,6 +430,7 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
               <Form.Label>Selecciona la jornada <span aria-hidden="true">*</span></Form.Label>
               <Form.Select
                 required
+                name="jornadaId"
                 value={jornadaId}
                 onChange={(e) => setJornadaId(e.target.value)}
               >
