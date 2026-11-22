@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "test:seguimiento": "node --test src/utils/seguimiento.test.js",
     "test:entrega": "node --test src/utils/entregaCustodia.test.js",
-    "test:flujos": "node --test src/utils/seguimiento.test.js src/utils/entregaCustodia.test.js src/context/clinicaReducer.test.js src/utils/qaVisual.test.js src/utils/cargaTecnicos.test.js src/utils/validacionEntradas.test.js"
+    "test:flujos": "node --test src/utils/seguimiento.test.js src/utils/entregaCustodia.test.js src/context/clinicaReducer.test.js src/utils/qaVisual.test.js src/utils/cargaTecnicos.test.js src/utils/validacionEntradas.test.js src/utils/seguridadRoles.test.js"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
