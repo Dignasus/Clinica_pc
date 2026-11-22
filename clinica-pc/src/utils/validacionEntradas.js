@@ -41,9 +41,11 @@ const ETIQUETAS = {
 
 // Excluir caracteres de control y controles bidireccionales invisibles.
 // Los saltos de línea son válidos únicamente en diagnósticos de texto plano.
+// eslint-disable-next-line no-control-regex -- se detectan intencionalmente controles C0/C1.
 const CONTROL = /[\u0000-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069]/u;
+// eslint-disable-next-line no-control-regex -- permitir tabulaciones y saltos de línea en notas.
 const CONTROL_NOTAS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u202A-\u202E\u2066-\u2069]/u;
-const NOMBRE = /^[\p{L}\p{M}][\p{L}\p{M} .'’\-]*$/u;
+const NOMBRE = /^[\p{L}\p{M}][\p{L}\p{M} .'’-]*$/u;
 const EMAIL = /^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)+$/u;
 
 export function normalizarCampoRegistro(campo, valor) {
@@ -56,7 +58,7 @@ export function normalizarCampoRegistro(campo, valor) {
 
 export function validarTelefonoChileno(valor) {
   const texto = String(valor ?? '').trim();
-  if (!/^\+?[\d\s()\-]+$/u.test(texto)) return false;
+  if (!/^\+?[\d\s()-]+$/u.test(texto)) return false;
   const digitos = texto.replace(/\D/gu, '');
   const nacional = digitos.startsWith('56') && digitos.length === 11
     ? digitos.slice(2)
