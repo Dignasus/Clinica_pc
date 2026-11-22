@@ -1,5 +1,7 @@
-/* Clínica del PC · Login dividido inspirado en la referencia del equipo.
-   Fondo local para evitar enlaces externos rotos. */
+/* Clínica del PC · Prueba visual B: INACAP Maipú al anochecer.
+   Imagen desde portafolio del estudio de arquitectura GRAA.
+   URL externa temporal solo para revisar el diseño; sustituir por recurso autorizado/local antes de publicar.
+   Fuente: https://www.graa.cl/ */
 .cpc-login,
 .cpc-login * { box-sizing: border-box; }
 
@@ -14,28 +16,35 @@
   width: 100%;
   overflow: hidden;
   padding: clamp(18px, 4vh, 44px) 0;
-  background-color: #14233b;
-  background-image:
-    linear-gradient(90deg, rgba(9, 21, 41, .18), rgba(9, 21, 41, .08) 48%, rgba(9, 21, 41, .34)),
-    url('../assets/login-campus.jpg');
-  background-size: cover;
-  background-position: center 48%;
-  background-repeat: no-repeat;
+  background: linear-gradient(115deg, #18314c 0%, #13283e 62%, #0d1f34 100%);
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
 
-/* Panel derecho desenfocado: el formulario no tapa los rostros. */
+/* Fotografía de la sede INACAP Maipú, solo en la zona protagonista izquierda. */
+.cpc-login::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0 38% 0 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(130deg, rgba(9, 24, 45, .10), rgba(9, 24, 45, .25)),
+    url('https://static.wixstatic.com/media/72f8b6_f9cb5d524fe641919bd179a217d3a9ff~mv2_d_3456_3798_s_4_2.jpg/v1/fill/w_980%2Ch_1077%2Cal_c%2Cq_85%2Cusm_0.66_1.00_0.01%2Cenc_avif%2Cquality_auto/72f8b6_f9cb5d524fe641919bd179a217d3a9ff~mv2_d_3456_3798_s_4_2.jpg');
+  background-size: cover;
+  background-position: center 47%;
+  background-repeat: no-repeat;
+}
+
+/* Panel derecho sobrio: no compite visualmente con el campus. */
 .cpc-login::before {
   content: '';
   position: absolute;
   inset: 0 0 0 62%;
   z-index: 0;
   pointer-events: none;
-  background: rgba(13, 30, 50, .52);
-  border-left: 1px solid rgba(255, 255, 255, .14);
-  -webkit-backdrop-filter: blur(14px) saturate(90%);
-  backdrop-filter: blur(14px) saturate(90%);
+  background: linear-gradient(145deg, rgba(9, 23, 43, .80), rgba(22, 46, 67, .90));
+  border-left: 1px solid rgba(255, 255, 255, .16);
 }
 
 /* Identidad institucional sobre el área fotográfica. */
@@ -73,10 +82,9 @@
   line-height: 1.25;
 }
 
-/* En escritorio el logotipo se presenta sobre la fotografía, sin duplicarse en la tarjeta. */
+/* Marca dentro de la tarjeta solo en pantallas estrechas. */
 .cpc-login__brand { display: none; }
 
-/* Tarjeta interactiva centrada dentro del panel derecho. */
 .cpc-login__glass {
   position: relative;
   z-index: 2;
@@ -95,7 +103,7 @@
 }
 
 .cpc-login__brand {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   gap: 18px;
@@ -272,14 +280,15 @@
     display: flex;
     justify-content: center;
     padding: 26px 16px;
-    background-position: center 45%;
+  }
+  .cpc-login::after {
+    inset: 0;
+    background-position: center 48%;
   }
   .cpc-login::before {
     inset: 0;
     border-left: 0;
-    background: rgba(10, 23, 40, .40);
-    -webkit-backdrop-filter: blur(4px);
-    backdrop-filter: blur(4px);
+    background: rgba(10, 23, 40, .48);
   }
   .cpc-login__hero-brand { display: none; }
   .cpc-login__glass {
