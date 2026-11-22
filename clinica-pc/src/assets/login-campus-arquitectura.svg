@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="960" viewBox="0 0 1440 960" role="img" aria-label="Ilustración conceptual de arquitectura educativa moderna en colores institucionales">
+<defs>
+  <linearGradient id="cielo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#82bad8"/><stop offset=".54" stop-color="#cceaf5"/><stop offset="1" stop-color="#f2f6f3"/></linearGradient>
+  <linearGradient id="cristal" x1="0" y1="0" x2="1" y2=".8"><stop offset="0" stop-color="#7fb3cd"/><stop offset=".5" stop-color="#376989"/><stop offset="1" stop-color="#1b3c59"/></linearGradient>
+  <linearGradient id="pared" x1="0" y1="0" x2="1" y2=".7"><stop offset="0" stop-color="#fcfefe"/><stop offset=".8" stop-color="#dbe6ea"/><stop offset="1" stop-color="#b9cbd4"/></linearGradient>
+  <linearGradient id="sendero" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dce8e9"/><stop offset="1" stop-color="#aabdc7"/></linearGradient>
+  <linearGradient id="oscuro" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#122e45" stop-opacity=".18"/><stop offset=".7" stop-color="#122e45" stop-opacity="0"/></linearGradient>
+  <filter id="sombra"><feDropShadow dx="0" dy="16" stdDeviation="23" flood-color="#1c3b4e" flood-opacity=".27"/></filter>
+  <pattern id="ventanas" width="110" height="80" patternUnits="userSpaceOnUse">
+    <rect width="110" height="80" fill="#3b7698"/>
+    <rect x="5" y="6" width="100" height="65" rx="1" fill="url(#cristal)"/>
+    <path d="M12 13H98" stroke="#a8d5e7" stroke-width="2" opacity=".38"/>
+    <path d="M15 66L98 12" stroke="#d3f3f8" stroke-width="5" opacity=".11"/>
+  </pattern>
+</defs>
+<rect width="1440" height="960" fill="url(#cielo)"/>
+<circle cx="1195" cy="105" r="185" fill="#ffffff" opacity=".19"/>
+<path d="M0 560C235 511 379 542 576 506S1015 495 1440 550V960H0Z" fill="#b6d7c1" opacity=".45"/>
+<path d="M0 672C285 625 475 656 695 643S1202 639 1440 660V960H0Z" fill="#8cb6a9" opacity=".62"/>
+<g filter="url(#sombra)">
+  <path d="M100 334L750 256L1307 337V738L100 752Z" fill="#d4e0e5"/>
+  <path d="M738 257L1307 337V718L738 714Z" fill="#c8d9df"/>
+  <path d="M155 358L718 292V721L155 736Z" fill="url(#pared)"/>
+  <path d="M747 293L1269 364V712L747 708Z" fill="#d6e4e8"/>
+  <path d="M761 375L1256 423V688L761 687Z" fill="url(#ventanas)"/>
+  <path d="M746 292L1290 365V405L746 350Z" fill="#f1f7f9"/>
+  <path d="M747 712L1292 726V747L747 728Z" fill="#a2b8c0"/>
+  <path d="M157 608L716 579V714L157 733Z" fill="#28485e"/>
+  <g fill="#8eb4c7">
+    <path d="M176 632L295 626V712L176 720Z"/>
+    <path d="M312 624L430 618V706L312 710Z"/>
+    <path d="M448 616L568 611V700L448 705Z"/>
+    <path d="M586 609L696 604V694L586 697Z"/>
+  </g>
+  <path d="M154 594L716 568V606L154 634Z" fill="#edf5f7"/>
+  <path d="M148 581L719 548V568L149 601Z" fill="#ffffff"/>
+  <path d="M155 356L718 292V574L155 606Z" fill="url(#pared)"/>
+  <path d="M171 359L693 299" stroke="#ffffff" stroke-width="7" opacity=".75"/>
+  <path d="M719 291L747 295V735L719 719Z" fill="#a2b7bf"/>
+  <path d="M750 411L1272 459" stroke="#e9f5f9" stroke-width="15"/>
+  <path d="M750 542L1272 577" stroke="#e3eff4" stroke-width="15"/>
+  <path d="M888 365V694M1016 380V699M1141 397V706" stroke="#d6e8ee" stroke-width="11"/>
+  <path d="M749 682L1274 707" stroke="#edf5f5" stroke-width="12"/>
+  <path d="M740 293L1297 366" stroke="#ffffff" stroke-width="15"/>
+  <path d="M735 293L1294 365" stroke="#96b1bd" stroke-width="4" opacity=".65"/>
+  <rect x="333" y="406" width="36" height="61" rx="2" fill="#cc0025"/>
+  <path d="M350 418V467" stroke="#ffffff" stroke-width="8" opacity=".95"/>
+  <text x="383" y="458" font-family="Arial,Helvetica,sans-serif" font-size="58" font-weight="700" fill="#23354a" letter-spacing="-4">inacap</text>
+  <path d="M217 517H654" stroke="#b9ccd4" stroke-width="2"/>
+</g>
+<path d="M0 754L1440 718V960H0Z" fill="url(#sendero)"/>
+<path d="M498 751L875 738L1440 960H210Z" fill="#d4dfe1"/>
+<path d="M605 749L615 960M759 740L928 960M412 782L1131 776" stroke="#b6c5c8" stroke-width="3" opacity=".75"/>
+<path d="M0 773C151 749 277 768 424 748L498 960H0Z" fill="#5a8b72"/>
+<path d="M940 744C1169 733 1310 737 1440 724V960H1124Z" fill="#5c9175"/>
+<g fill="#305d53"><ellipse cx="91" cy="708" rx="60" ry="90"/><ellipse cx="142" cy="709" rx="54" ry="71"/><ellipse cx="1365" cy="708" rx="89" ry="101"/><ellipse cx="1291" cy="720" rx="62" ry="80"/></g>
+<g stroke="#385d4e" stroke-width="11"><path d="M93 817V701M1360 827V701" /></g>
+<g fill="#315b70" opacity=".32"><ellipse cx="259" cy="811" rx="20" ry="7"/><ellipse cx="1070" cy="809" rx="21" ry="8"/></g>
+<path d="M0 0H1440V960H0Z" fill="url(#oscuro)"/>
+</svg>
