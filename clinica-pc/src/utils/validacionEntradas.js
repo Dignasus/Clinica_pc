@@ -92,8 +92,11 @@ export function validarFormularioRegistro(formulario, etapa = 'completo') {
       : CONTROL.test(texto);
     if (controlInvalido) return `${etiqueta} contiene caracteres no permitidos.`;
 
-    if (CAMPOS_NOMBRE.has(campo) && (!NOMBRE.test(texto) || texto.length < 2)) {
-      return `${etiqueta} debe contener letras y signos propios de un nombre.`;
+    if (CAMPOS_NOMBRE.has(campo)) {
+      if (texto.length < 2) return `${etiqueta}: ingresa al menos 2 caracteres.`;
+      if (!NOMBRE.test(texto)) {
+        return `${etiqueta}: usa solo letras, espacios, guiones, apóstrofes o puntos. No ingreses números ni otros símbolos.`;
+      }
     }
     if (campo === 'correo' && !EMAIL.test(texto)) {
       return 'Ingresa un correo electrónico válido.';
