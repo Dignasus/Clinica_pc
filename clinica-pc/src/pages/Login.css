@@ -15,7 +15,15 @@
   width: 100%;
   overflow: hidden;
   padding: clamp(18px, 4vh, 44px) 0;
-  background: linear-gradient(120deg, #19324e, #0d2036 72%);
+  /* La foto también existe bajo el panel derecho para que el blur tenga qué desenfocar. */
+  background-color: #142b42;
+  background-image:
+    linear-gradient(90deg, rgba(8, 21, 39, .18), rgba(9, 24, 42, .26)),
+    url('https://adfs.inacap.cl/adfs/portal/illustration/illustration.jpg?id=A36BF749E3B8F5BCB7D33EE4612467F6D5F0D2F63A2201CF70B184B0DF3CA0B2'),
+    url('../assets/login-campus.jpg');
+  background-size: cover;
+  background-position: center 46%;
+  background-repeat: no-repeat;
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
@@ -36,15 +44,17 @@
   background-repeat: no-repeat;
 }
 
-/* Panel derecho limpio: sin el desenfoque de 14 px de la versión anterior. */
+/* Panel derecho traslúcido sobre la MISMA foto, con blur real del fondo. */
 .cpc-login::before {
   content: '';
   position: absolute;
   inset: 0 0 0 62%;
   z-index: 0;
   pointer-events: none;
-  background: linear-gradient(135deg, #10243b, #142c46);
-  border-left: 1px solid rgba(255, 255, 255, .13);
+  background: rgba(10, 27, 48, .48);
+  border-left: 1px solid rgba(255, 255, 255, .16);
+  -webkit-backdrop-filter: blur(22px) saturate(90%);
+  backdrop-filter: blur(22px) saturate(90%);
 }
 
 /* Identidad institucional sobre el área fotográfica. */
@@ -97,14 +107,14 @@
   padding: clamp(25px, 3vw, 38px);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, .82);
-  background: rgba(244, 248, 254, .86);
+  background: rgba(244, 248, 254, .80);
   -webkit-backdrop-filter: blur(18px) saturate(135%);
   backdrop-filter: blur(18px) saturate(135%);
   box-shadow: 0 26px 80px rgba(1, 12, 31, .30), inset 0 1px 0 rgba(255, 255, 255, .54);
 }
 
 .cpc-login__brand {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   gap: 18px;
@@ -289,7 +299,9 @@
   .cpc-login::before {
     inset: 0;
     border-left: 0;
-    background: rgba(10, 23, 40, .35);
+    background: rgba(10, 23, 40, .32);
+    -webkit-backdrop-filter: blur(8px) saturate(100%);
+    backdrop-filter: blur(8px) saturate(100%);
   }
   .cpc-login__hero-brand { display: none; }
   .cpc-login__glass {
