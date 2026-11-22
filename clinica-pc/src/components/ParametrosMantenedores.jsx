@@ -4,7 +4,6 @@ import { useClinica } from '../context/clinicaContextBase.js';
 import './mantenedores/MantenedoresVisual.css';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
 import AdministracionRoles from './AdministracionRoles.jsx';
-import { hayEscenariosQaVisual, QA_VISUAL_PERIODO } from '../utils/qaVisual.js';
 
 // La jornada presencial puede cerrar con equipos transferidos a custodia; esos equipos NO están entregados.
 const estadosFinales = ['entregado', 'en_custodia', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
@@ -40,14 +39,12 @@ function leerCSV(texto) {
 export default function ParametrosMantenedores({ modoOscuro = false }) {
   const { datos, dispatch } = useClinica();
   const [aviso, setAviso] = useState(null);
+  const [seccionActiva, setSeccionActiva] = useState('jornadas');
   const rolesPermitidos = (datos.roles || []).map((r) => r.id);
   const etiquetasRol = Object.fromEntries((datos.roles || []).map((r) => [r.id, r.nombre]));
   const jornadas = [...datos.jornadas].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const colores = { programada: 'primary', activa: 'success', pendiente_cierre: 'warning', finalizada: 'secondary' };
 
-  const ejemplos = datos.atenciones.filter((a) => a.jornadaId === 'JOR-001' &&
-    a.estado === 'preinscrito' && ((a.id === 'AT-001' && a.dispositivoId === 'DISP-001') ||
-      (a.id === 'AT-002' && a.dispositivoId === 'DISP-002')));
   const pendientesPasados = datos.atenciones.filter((a) => {
     const jornada = datos.jornadas.find((j) => j.id === a.jornadaId);
     return a.estado === 'preinscrito' && jornada?.fecha < fechaLocal();
@@ -81,11 +78,6 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
   const marcarNoPresentado = (a) => {
     if (window.confirm('¿Confirmas que el equipo no se presentó?')) {
       dispatch({ type: 'MARCAR_NO_PRESENTADO', payload: a.id });
-    }
-  };
-  const limpiarEjemplos = () => {
-    if (ejemplos.length && window.confirm(`Se eliminarán ${ejemplos.length} atenciones originales de demostración. ¿Continuar?`)) {
-      dispatch({ type: 'LIMPIAR_DATOS_DEMO' });
     }
   };
   const handleCrearChecklist = (e) => {
@@ -188,42 +180,24 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Alert>
       )}
 
-      {import.meta.env.DEV && (
-        <Card className="mp-section">
-          <Card.Header className="mp-section-header">
-            <span className="mp-step">QA</span>
-            <div>
-              <h2>Escenarios rápidos de prueba visual</h2>
-              <p>Exclusivo de desarrollo: crea dos notebooks ficticios listos para retiro y custodia.</p>
-            </div>
-          </Card.Header>
-          <Card.Body className="mp-section-body">
-            <Alert variant="info">
-              No afecta tus atenciones anteriores ni envía información real. Usa el período
-              <strong> {QA_VISUAL_PERIODO}</strong> para ver los equipos en el panel técnico
-              y el historial. Esta herramienta no aparece en la versión publicada.
-            </Alert>
-            <div className="d-flex flex-wrap gap-2">
-              <Button variant="danger" disabled={hayEscenariosQaVisual(datos)}
-                onClick={() => {
-                  dispatch({ type: 'QA_VISUAL_CARGAR' });
-                  setAviso({ tipo: 'success', texto: 'Listos dos notebooks QA: retiro por tercero y custodia en piso 2.' });
-                }}>
-                Crear 2 notebooks QA
-              </Button>
-              <Button variant="outline-secondary" disabled={!hayEscenariosQaVisual(datos)}
-                onClick={() => {
-                  if (!window.confirm('¿Reiniciar SOLO los registros QA Visual? Se perderá el avance de esos dos equipos ficticios.')) return;
-                  dispatch({ type: 'QA_VISUAL_REINICIAR' });
-                  setAviso({ tipo: 'info', texto: 'Reiniciados los dos escenarios QA. Tus demás registros siguen intactos.' });
-                }}>
-                Reiniciar únicamente pruebas QA
-              </Button>
-            </div>
-          </Card.Body>
-        </Card>
-      )}
+      <nav className="mp-tabs" aria-label="Áreas de administración">
+        {[
+          ['jornadas', 'Jornadas', 'Calendario y preinscripciones'],
+          ['personal', 'Personal y roles', 'Integrantes y permisos'],
+          ['checklists', 'Checklists', 'Plantillas de trabajo'],
+        ].map(([id, titulo, descripcion]) => (
+          <button key={id} type="button"
+            className={`mp-tab ${seccionActiva === id ? 'mp-tab--activa' : ''}`}
+            aria-current={seccionActiva === id ? 'page' : undefined}
+            onClick={() => setSeccionActiva(id)}>
+            <strong>{titulo}</strong>
+            <span>{descripcion}</span>
+          </button>
+        ))}
+      </nav>
 
+      {seccionActiva === 'jornadas' && (
+        <div className="mp-panel" aria-label="Jornadas">
       <Card className="mp-section">
         <Card.Header className="mp-section-header">
           <span className="mp-step">01</span>
@@ -334,6 +308,11 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Card.Body>
       </Card>
 
+        </div>
+      )}
+
+      {seccionActiva === 'personal' && (
+        <div className="mp-panel" aria-label="Personal y roles">
       <Card className="mp-section">
         <Card.Header className="mp-section-header">
           <span className="mp-step">03</span>
@@ -411,7 +390,11 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
       </Card>
 
       <AdministracionRoles />
+        </div>
+      )}
 
+      {seccionActiva === 'checklists' && (
+        <div className="mp-panel" aria-label="Checklists">
       <Card className="mp-section">
         <Card.Header className="mp-section-header">
           <span className="mp-step">04</span>
@@ -468,26 +451,9 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
         </Card.Body>
       </Card>
 
-      <Card className="mp-section mp-section-danger">
-        <Card.Header className="mp-section-header">
-          <span className="mp-step">05</span>
-          <div>
-            <h2>Datos iniciales de demostración</h2>
-            <p>Elimina exclusivamente los registros de ejemplo que reconoce el sistema.</p>
-          </div>
-        </Card.Header>
-        <Card.Body className="mp-section-body">
-          <div className="mp-demo-action">
-            <div>
-              <p className="mb-1">Ejemplos originales detectados: <strong>{ejemplos.length}</strong></p>
-              <p className="mp-muted mb-0">No elimina los registros nuevos. La eliminación solicita confirmación.</p>
-            </div>
-            <Button variant="outline-danger" disabled={!ejemplos.length} onClick={limpiarEjemplos}>
-              Eliminar ejemplos originales
-            </Button>
-          </div>
-        </Card.Body>
-      </Card>
+        </div>
+      )}
+
     </section>
   );
 }

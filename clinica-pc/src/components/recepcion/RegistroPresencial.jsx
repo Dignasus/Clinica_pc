@@ -4,7 +4,6 @@ import './AtencionVisual.css';
 
 import DatosPersonales from '../inscripcion/DatosPersonales.jsx';
 import DatosEquipo from '../inscripcion/DatosEquipo.jsx';
-import TerminosLegales from '../inscripcion/TerminosLegales.jsx';
 
 import { useClinica } from '../../context/clinicaContextBase.js';
 import { normalizarRut, validarRut } from '../../utils/rut.js';
@@ -39,7 +38,6 @@ const formularioBase = {
     mantencionFisica: false,
     mantencionLogica: false,
   },
-  aceptaTerminos: false,
 };
 
 // Estados que no mantienen una atención técnica abierta
@@ -167,6 +165,49 @@ export default function RegistroPresencial({
     useState('');
 
   const [error, setError] = useState('');
+  const [pasoActivo, setPasoActivo] = useState(1);
+
+  const validarPaso = (paso) => {
+    if (paso === 1) {
+      if (!jornadasAbiertas.some((j) => j.id === jornadaId)) return 'Selecciona una jornada iniciada hoy.';
+      if (!validarRut(formData.rut)) return 'El RUT ingresado no es válido.';
+      const region = formData.region || encontrarRegionDeComuna(formData.comuna);
+      if (!region || !comunasDeRegion(region).includes(formData.comuna)) {
+        return 'Selecciona una región y comuna válidas.';
+      }
+      if (['nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono', 'correo', 'sector']
+        .some((campo) => !String(formData[campo] ?? '').trim())) {
+        return 'Completa los datos obligatorios del propietario antes de continuar.';
+      }
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(formData.correo.trim())) {
+        return 'Ingresa un correo válido para el propietario.';
+      }
+    }
+    if (paso === 2) {
+      if (['marcaEquipo', 'modeloEquipo', 'diagnosticoPropietario']
+        .some((campo) => !String(formData[campo] ?? '').trim())) {
+        return 'Completa la marca, modelo y descripción del problema.';
+      }
+      if (!Object.values(formData.servicios).some(Boolean)) {
+        return 'Selecciona al menos un servicio para el dispositivo.';
+      }
+    }
+    return '';
+  };
+
+  const avanzarPaso = () => {
+    const mensaje = validarPaso(pasoActivo);
+    if (mensaje) return setError(mensaje);
+    setError('');
+    setPasoActivo((actual) => Math.min(3, actual + 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const retrocederPaso = () => {
+    setError('');
+    setPasoActivo((actual) => Math.max(1, actual - 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Detectar propietario existente
   const propietarioActual = buscarPropietario(formData.rut);
@@ -326,12 +367,6 @@ export default function RegistroPresencial({
     if (!servicioIds.length) {
       return setError(
         'Selecciona al menos un servicio.'
-      );
-    }
-
-    if (!formData.aceptaTerminos) {
-      return setError(
-        'Debes aceptar los términos y condiciones.'
       );
     }
 
@@ -498,7 +533,10 @@ export default function RegistroPresencial({
       diagnosticoPropietario:
         formData.diagnosticoPropietario.trim(),
       fechaPreinscripcion: ahora,
-      fechaAceptacionTerminos: ahora,
+      // Recepción no puede aceptar el consentimiento en nombre del cliente.
+      fechaAceptacionTerminos: null,
+      estadoConsentimiento: 'pendiente',
+      solicitudConsentimiento: 'correo_pendiente_implementacion',
       tecnicoIds: [],
       observaciones: [],
       respuestasChecklist: [],
@@ -545,6 +583,29 @@ export default function RegistroPresencial({
       </div>
 
       <Form onSubmit={registrar} className="cp-register-form">
+        <nav className="cp-register-steps" aria-label="Pasos del registro presencial">
+          {[
+            [1, 'Jornada y propietario'],
+            [2, 'Equipo y servicios'],
+            [3, 'Confirmar registro'],
+          ].map(([numero, titulo]) => (
+            <button key={numero} type="button" className={`cp-register-step ${pasoActivo === numero ? 'cp-register-step--active' : ''}`}
+              aria-current={pasoActivo === numero ? 'step' : undefined}
+              disabled={numero > pasoActivo}
+              onClick={() => { setPasoActivo(numero); setError(''); }}>
+              <span>{numero}</span><strong>{titulo}</strong>
+            </button>
+          ))}
+        </nav>
+
+        {error && (
+          <Alert variant="danger" role="alert" className="mb-3" dismissible onClose={() => setError('')}>
+            <strong>No se pudo continuar.</strong> {error}
+          </Alert>
+        )}
+
+        {pasoActivo === 1 && (
+          <>
         {/* 1. JORNADA */}
         <Card className={cardClass}>
           <Card.Header className={headerClass}>
@@ -617,6 +678,11 @@ export default function RegistroPresencial({
           </Alert>
         )}
 
+          </>
+        )}
+
+        {pasoActivo === 2 && (
+          <>
         {/* 3. DISPOSITIVOS ANTERIORES */}
         {dispositivosAnteriores.length > 0 && (
           <Card className={cardClass}>
@@ -743,53 +809,60 @@ export default function RegistroPresencial({
           </Alert>
         )}
 
-        {/* 5. CONSENTIMIENTO */}
+          </>
+        )}
+
+        {pasoActivo === 3 && (
+          <>
+        {/* 5. INFORMACIÓN SOBRE CONSENTIMIENTO */}
         <Card className={cardClass}>
           <Card.Header className={headerClass}>
               <span className="cp-step">05</span>
-              <span className="cp-section-heading"><h2>Consentimiento</h2></span>
+              <span className="cp-section-heading"><h2>Estado del consentimiento</h2></span>
             </Card.Header>
 
           <Card.Body className="cp-section-body">
-            <TerminosLegales
-              formData={formData}
-              onChange={cambiarDato}
-              modoOscuro={modoOscuro}
-            />
+            <Alert variant="info" className="mb-3">
+              <strong>Recepción no acepta términos ni permisos por el propietario.</strong>
+              La decisión debe tomarla el cliente mediante su propio enlace.
+            </Alert>
+            <div className="cp-register-consent-summary">
+              <p><strong>Propietario:</strong> {formData.nombre} {formData.apellidoPaterno}</p>
+              <p><strong>Correo para solicitud:</strong> {formData.correo}</p>
+              <p><strong>Equipo:</strong> {formData.marcaEquipo} {formData.modeloEquipo}</p>
+              <p><strong>Consentimiento:</strong> Pendiente de respuesta del propietario.</p>
+            </div>
+            <p className="cp-helper-text small mb-0">
+              Este prototipo no envía correos reales. El registro permanecerá
+              pendiente hasta implementar la simulación de respuesta del cliente.
+              La ausencia de respuesta nunca se considera aceptación.
+            </p>
           </Card.Body>
         </Card>
 
-        {/* MENSAJES Y BOTÓN DE REGISTRO */}
-        <div className="cp-submit-zone d-grid gap-3 mb-5">
-          {error && (
-            <Alert
-              variant="danger"
-              role="alert"
-              className="mb-0"
-              dismissible
-              onClose={() => setError('')}
-            >
-              <strong>
-                No se pudo completar el registro.
-              </strong>
+          </>
+        )}
 
-              <p className="mb-0 mt-1">
-                {error}
-              </p>
-            </Alert>
+        {/* NAVEGACIÓN Y ACCIÓN PRINCIPAL */}
+        <div className="cp-submit-zone cp-register-actions mb-5">
+          {pasoActivo > 1 && (
+            <Button type="button" variant="outline-secondary" size="lg" onClick={retrocederPaso}>
+              ← Anterior
+            </Button>
           )}
-
-          <Button
-            type="submit"
-            size="lg"
-            className="cp-primary-button cp-register-submit"
-            variant="danger"
-            disabled={!jornadasAbiertas.length}
-          >
-            {equipoReutilizado
-              ? 'Registrar nueva atención del dispositivo'
-              : 'Registrar equipo y continuar a recepción'}
-          </Button>
+          {pasoActivo < 3 ? (
+            <Button type="button" size="lg" className="cp-primary-button cp-register-submit"
+              variant="danger" disabled={!jornadasAbiertas.length} onClick={avanzarPaso}>
+              Siguiente →
+            </Button>
+          ) : (
+            <Button type="submit" size="lg" className="cp-primary-button cp-register-submit"
+              variant="danger" disabled={!jornadasAbiertas.length}>
+              {equipoReutilizado
+                ? 'Registrar nueva atención del dispositivo'
+                : 'Registrar equipo y continuar a recepción'}
+            </Button>
+          )}
         </div>
       </Form>
     </section>

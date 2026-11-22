@@ -290,7 +290,7 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
             </Card.Body>
           </Card>
 
-          <DetalleAtencion registro={seleccionado} datos={datos}
+          <DetalleAtencion key={seleccionado.id} registro={seleccionado} datos={datos}
             modoOscuro={modoOscuro} onVolver={() => setSeleccionadoId(null)}
             puedeGestionarSeguimiento={puedeGestionarSeguimiento}
             puedeGestionarCustodia={puedeGestionarCustodia} usuarioId={usuarioId} />

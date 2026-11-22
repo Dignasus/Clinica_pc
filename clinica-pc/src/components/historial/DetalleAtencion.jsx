@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Row, Table } from 'react-bootstrap';
 import FormularioRetiro from '../tecnico/FormularioRetiro.jsx';
 import SeguimientoTicket from './SeguimientoTicket.jsx';
@@ -56,22 +57,44 @@ function Campo({ nombre, valor }) {
   );
 }
 
-function Seccion({ numero, titulo, subtitulo, children }) {
+function Seccion({ numero, titulo, subtitulo, children, abierto, alAlternar }) {
   return (
     <Card as="section" className="hist-card hist-detail-section">
-      <Card.Header className="hist-card__header">
-        <span className="hist-step">{String(numero).padStart(2, '0')}</span>
-        <div>
-          <h2>{titulo}</h2>
-          {subtitulo && <p>{subtitulo}</p>}
-        </div>
+      <Card.Header className="hist-card__header hist-accordion-header">
+        <button type="button" className="hist-accordion-trigger"
+          aria-expanded={abierto} aria-controls={`hist-detalle-${numero}`}
+          onClick={alAlternar}>
+          <span className="hist-step">{String(numero).padStart(2, '0')}</span>
+          <span className="hist-accordion-label">
+            <span className="hist-accordion-title">{titulo}</span>
+            {subtitulo && <span className="hist-accordion-description">{subtitulo}</span>}
+          </span>
+          <span className="hist-accordion-symbol" aria-hidden="true">{abierto ? '−' : '+'}</span>
+        </button>
       </Card.Header>
-      <Card.Body className="hist-card__body">{children}</Card.Body>
+      {abierto && (
+        <Card.Body id={`hist-detalle-${numero}`} className="hist-card__body">{children}</Card.Body>
+      )}
     </Card>
   );
 }
 
 export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver, puedeGestionarSeguimiento = false, puedeGestionarCustodia = false, usuarioId = '' }) {
+  // La ficha abre lo relevante para el estado actual; el resto queda disponible por secciones.
+  const [seccionesAbiertas, setSeccionesAbiertas] = useState(() => new Set([
+    2,
+    ...(registro.estado === 'en_custodia' ? [6] : []),
+    ...(registro.estado === 'entregado' ? [7] : []),
+  ]));
+  const alternarSeccion = (numero) => setSeccionesAbiertas((actual) => {
+    const siguiente = new Set(actual);
+    if (siguiente.has(numero)) siguiente.delete(numero);
+    else siguiente.add(numero);
+    return siguiente;
+  });
+  const expandirTodas = () => setSeccionesAbiertas(new Set([1, 2, 3, 4, 5, 6, 7, 8]));
+  const contraerTodas = () => setSeccionesAbiertas(new Set());
+
   const dispositivo = registro.dispositivo || {};
   const propietario = registro.propietario || {};
   const jornada = registro.jornada || {};
@@ -158,7 +181,15 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         </Card.Body>
       </Card>
 
-      <Seccion numero={1} titulo="Propietario y dispositivo"
+      <div className="hist-accordion-actions">
+        <span>Abre solo la información que necesites consultar.</span>
+        <div>
+          <Button size="sm" variant="outline-secondary" onClick={expandirTodas}>Expandir todas</Button>
+          <Button size="sm" variant="outline-secondary" onClick={contraerTodas}>Contraer todas</Button>
+        </div>
+      </div>
+
+      <Seccion numero={1} abierto={seccionesAbiertas.has(1)} alAlternar={() => alternarSeccion(1)} titulo="Propietario y dispositivo"
         subtitulo="Identificación y datos de contacto registrados.">
         <Row className="g-4">
           <Col lg={6}>
@@ -186,7 +217,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         </Row>
       </Seccion>
 
-      <Seccion numero={2} titulo="Recepción y diagnóstico"
+      <Seccion numero={2} abierto={seccionesAbiertas.has(2)} alAlternar={() => alternarSeccion(2)} titulo="Recepción y diagnóstico"
         subtitulo="Información del ingreso e inspección inicial.">
         <div className="hist-section-lead">
           <span>Estado de la atención</span>
@@ -218,7 +249,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         </Row>
       </Seccion>
 
-      <Seccion numero={3} titulo="Checklist y trabajo técnico"
+      <Seccion numero={3} abierto={seccionesAbiertas.has(3)} alAlternar={() => alternarSeccion(3)} titulo="Checklist y trabajo técnico"
         subtitulo="Resultado de las tareas aplicadas a los servicios.">
         <div className="hist-section-lead">
           <span>Tareas registradas</span>
@@ -252,7 +283,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         </div>
       </Seccion>
 
-      <Seccion numero={4} titulo="Comparación inicial y final"
+      <Seccion numero={4} abierto={seccionesAbiertas.has(4)} alAlternar={() => alternarSeccion(4)} titulo="Comparación inicial y final"
         subtitulo="Comprueba las diferencias antes y después del servicio.">
         <Row className="g-3">
           <Col md={6}>
@@ -282,7 +313,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         )}
       </Seccion>
 
-      <Seccion numero={5} titulo="Contacto y entrega"
+      <Seccion numero={5} abierto={seccionesAbiertas.has(5)} alAlternar={() => alternarSeccion(5)} titulo="Contacto y entrega"
         subtitulo="Aviso y entrega física; el ticket sigue abierto para el seguimiento.">
         <Row className="g-4">
           <Col md={6}>
@@ -330,7 +361,7 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         )}
       </Seccion>
 
-      <Seccion numero={6} titulo="Custodia temporal y retiro posterior"
+      <Seccion numero={6} abierto={seccionesAbiertas.has(6)} alAlternar={() => alternarSeccion(6)} titulo="Custodia temporal y retiro posterior"
         subtitulo="Ubicación, responsables y transferencia del dispositivo fuera del horario de la clínica.">
         {registro.custodia ? (
           <div className="hist-detail-group">
@@ -367,13 +398,13 @@ export default function DetalleAtencion({ registro, datos, modoOscuro, onVolver,
         )}
       </Seccion>
 
-      <Seccion numero={7} titulo="Seguimiento posterior y cierre del ticket"
+      <Seccion numero={7} abierto={seccionesAbiertas.has(7)} alAlternar={() => alternarSeccion(7)} titulo="Seguimiento posterior y cierre del ticket"
         subtitulo="Encuesta de satisfacción, incidencias y revisión administrativa.">
         <SeguimientoTicket atencion={registro}
           puedeGestionar={puedeGestionarSeguimiento} usuarioId={usuarioId} />
       </Seccion>
 
-      <Seccion numero={8} titulo="Relación con otras atenciones"
+      <Seccion numero={8} abierto={seccionesAbiertas.has(8)} alAlternar={() => alternarSeccion(8)} titulo="Relación con otras atenciones"
         subtitulo="Visitas independientes que comparten el mismo dispositivo.">
         <p className="hist-section-explanation">
           Todas estas atenciones comparten el mismo identificador de dispositivo.

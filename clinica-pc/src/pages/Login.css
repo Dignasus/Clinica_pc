@@ -1,100 +1,304 @@
-/* Diseño aislado: no cambia los estilos del dashboard ni del resto de la app. */
-.cpc-login, .cpc-login * { box-sizing: border-box; }
+/* Clínica del PC · Una sola fotografía INACAP detrás de ambas columnas.
+   Lado derecho nítido; panel izquierdo esmerilado mediante backdrop-filter. */
+.cpc-login,
+.cpc-login * { box-sizing: border-box; }
+
 .cpc-login {
+  position: relative;
+  isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(430px, 45%) minmax(0, 1fr);
+  grid-template-columns: minmax(420px, 38fr) minmax(0, 62fr);
+  align-items: center;
+  min-height: 100vh;
   min-height: 100dvh;
-  background: #fff;
-  color: #171b26;
+  width: 100%;
+  overflow: hidden;
+  padding: clamp(18px, 4vh, 44px) 0;
+  /* Una fotografía de fondo, sin copias en pseudoelementos. */
+  background-color: #243c54;
+  background-image: url('https://adfs.inacap.cl/adfs/portal/illustration/illustration.jpg?id=A36BF749E3B8F5BCB7D33EE4612467F6D5F0D2F63A2201CF70B184B0DF3CA0B2');
+  background-size: cover;
+  background-position: center 46%;
+  background-repeat: no-repeat;
+  color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
-.cpc-login__left {
+
+/* Cristal esmerilado sobre LA MISMA fotografía, solo en el lado izquierdo. */
+.cpc-login::before {
+  content: '';
+  position: absolute;
+  inset: 0 62% 0 0;
+  z-index: 1;
+  pointer-events: none;
+  background: rgba(12, 29, 49, .30);
+  border-right: 1px solid rgba(255, 255, 255, .25);
+  -webkit-backdrop-filter: blur(26px) saturate(110%);
+  backdrop-filter: blur(26px) saturate(110%);
+}
+
+/* Identidad institucional sobre el área fotográfica. */
+.cpc-login__hero-brand {
+  position: absolute;
+  z-index: 2;
+  top: clamp(28px, 7vh, 72px);
+  left: clamp(24px, 5vw, 80px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: calc(38% - 48px);
+  padding: 15px 19px;
+  border: 1px solid rgba(255, 255, 255, .56);
+  border-radius: 15px;
+  background: rgba(247, 250, 255, .84);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 44px rgba(6, 17, 35, .19);
+}
+
+.cpc-login__hero-brand img {
+  display: block;
+  width: clamp(150px, 17vw, 220px);
+  max-height: 73px;
+  object-fit: contain;
+}
+
+.cpc-login__hero-brand span {
+  padding-left: 14px;
+  border-left: 1px solid #aab8c9;
+  color: #1d304d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* En escritorio el logo se presenta sobre el panel izquierdo, no se duplica. */
+.cpc-login__brand { display: none; }
+
+/* Formulario centrado dentro del panel izquierdo. */
+.cpc-login__glass {
+  position: relative;
+  z-index: 3;
+  grid-column: 1;
+  justify-self: center;
+  width: min(calc(100% - 44px), 440px);
+  min-width: 0;
+  margin: 0;
+  padding: clamp(25px, 3vw, 38px);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, .82);
+  background: rgba(244, 248, 254, .80);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  backdrop-filter: blur(18px) saturate(135%);
+  box-shadow: 0 26px 80px rgba(1, 12, 31, .30), inset 0 1px 0 rgba(255, 255, 255, .54);
+}
+
+.cpc-login__brand {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: clamp(21px, 3vh, 29px);
+}
+
+.cpc-login__brand img {
+  display: block;
+  width: 148px;
+  max-width: 48%;
+  max-height: 65px;
+  object-fit: contain;
+}
+
+.cpc-login__slogan {
+  flex: 0 0 auto;
+  padding-left: 16px;
+  border-left: 1px solid #abb6c5;
+  color: #26364a;
+  font-size: 11px;
+  line-height: 1.25;
+  letter-spacing: -.01em;
+  font-weight: 850;
+}
+
+.cpc-login__heading {
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+.cpc-login__heading h1 {
+  margin: 0 0 9px;
+  color: #142238;
+  font-size: clamp(29px, 3vw, 37px);
+  font-weight: 850;
+  letter-spacing: -.05em;
+  line-height: 1.15;
+}
+
+.cpc-login__period { color: #c6001d; }
+
+.cpc-login__heading > p:last-child {
+  max-width: 36ch;
+  margin: 0 auto;
+  color: #4c5c71;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.cpc-login__form {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 40px;
-  min-height: 100dvh;
-  padding: clamp(30px, 4.5vw, 70px);
+  min-width: 0;
 }
-.cpc-login__brand { display: flex; align-items: center; gap: 20px; }
-.cpc-login__brand img { display: block; width: min(190px, 53%); height: auto; max-height: 75px; object-fit: contain; }
-.cpc-login__slogan {
-  padding-left: 19px;
-  border-left: 1px solid #acb0b8;
+
+.cpc-login__form label {
+  margin: 0 0 8px;
+  color: #203149;
   font-size: 13px;
-  line-height: 1.15;
-  font-weight: 800;
-  letter-spacing: -.025em;
+  font-weight: 750;
 }
-.cpc-login__content { width: 100%; max-width: 425px; margin: auto; }
-.cpc-login__heading { display: flex; align-items: center; gap: 21px; margin-bottom: 46px; }
-.cpc-login__accent { width: 5px; height: 69px; border-radius: 5px; flex: 0 0 5px; background: #d00016; }
-.cpc-login__heading h1 { margin: 0 0 7px; font-size: clamp(29px, 3vw, 42px); line-height: 1.08; font-weight: 750; letter-spacing: -.045em; }
-.cpc-login__heading p { margin: 0; font-size: 13px; color: #687184; }
-.cpc-login__form { display: flex; flex-direction: column; gap: 0; }
-.cpc-login__form label { font-size: 14px; font-weight: 650; margin-bottom: 9px; }
+
 .cpc-login__form input {
+  display: block;
   width: 100%;
-  height: 52px;
-  margin-bottom: 25px;
-  padding: 0 16px;
-  background: #fff;
-  color: #171b26;
-  border: 1px solid #c8cbd2;
-  border-radius: 8px;
+  min-width: 0;
+  height: 49px;
+  margin: 0 0 17px;
+  padding: 0 14px;
+  color: #1a293f;
+  background: rgba(255, 255, 255, .94);
+  border: 1px solid #b9c5d4;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
   outline: none;
-  font-size: 15px;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .16s ease, box-shadow .16s ease;
 }
-.cpc-login__form input::placeholder { color: #8791a0; }
-.cpc-login__form input:focus { border-color: #c60018; box-shadow: 0 0 0 3px #c6001820; }
-.cpc-login__submit {
-  min-height: 53px;
-  width: 100%;
-  margin-top: 9px;
-  background: #cf0018;
-  color: #fff;
+
+.cpc-login__form input::placeholder { color: #6d7a8c; opacity: 1; }
+
+.cpc-login__form input:focus {
+  border-color: #bb0020;
+  box-shadow: 0 0 0 3px rgba(198, 0, 29, .16);
+}
+
+.cpc-login__password-field {
+  position: relative;
+}
+
+.cpc-login__password-field input { padding-right: 91px; }
+
+.cpc-login__toggle-password {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  min-height: 41px;
+  padding: 0 9px;
+  background: rgba(235, 239, 246, .90);
+  color: #283c56;
   border: 0;
   border-radius: 8px;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 750;
   cursor: pointer;
-  transition: background .15s;
 }
-.cpc-login__submit:hover { background: #b40016; }
-.cpc-login__submit:focus-visible { outline: 3px solid #b40016; outline-offset: 3px; }
+
+.cpc-login__toggle-password:hover { background: #dce5ef; }
+
 .cpc-login__error {
-  margin: -7px 0 12px;
-  padding: 12px 14px;
-  border-radius: 8px;
-  border: 1px solid #fecdd3;
-  background: #fff1f2;
-  color: #9f1239;
+  margin: -1px 0 15px;
+  padding: 11px 13px;
+  background: #fff1f3;
+  border: 1px solid #ecc0c9;
+  border-radius: 9px;
+  color: #92152c;
   font-size: 13px;
+  line-height: 1.45;
 }
-.cpc-login__footer { font-size: 12px; color: #8791a0; }
-.cpc-login__photo { position: relative; overflow: hidden; min-height: 100dvh; background: #e0e7ef; }
-.cpc-login__photo img {
-  position: absolute;
-  inset: 0;
+
+.cpc-login__submit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 13px;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 48%;
+  min-height: 51px;
+  margin-top: 5px;
+  padding: 12px 18px;
+  border: 1px solid #c6001d;
+  border-radius: 10px;
+  background: #c6001d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color .16s ease, transform .16s ease;
 }
-@media (max-width: 900px) {
-  .cpc-login { grid-template-columns: minmax(360px, 49%) minmax(0, 1fr); }
-  .cpc-login__left { padding: 34px; }
-  .cpc-login__brand { gap: 12px; }
-  .cpc-login__slogan { font-size: 11px; padding-left: 12px; }
+
+.cpc-login__submit:hover { background: #a90019; transform: translateY(-1px); }
+.cpc-login__submit span:last-child { font-size: 21px; line-height: 1; }
+
+.cpc-login :is(button, input):focus-visible {
+  outline: 3px solid #b2001c;
+  outline-offset: 3px;
 }
-@media (max-width: 700px) {
-  .cpc-login { display: block; }
-  .cpc-login__left { min-height: 100dvh; padding: 30px 24px 20px; }
-  .cpc-login__content { max-width: 425px; }
-  .cpc-login__heading { margin-bottom: 36px; }
-  .cpc-login__photo { display: none; }
+
+.cpc-login__submit:focus-visible {
+  outline-color: #ff91a3;
+}
+
+.cpc-login__footer {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 7px;
+  margin-top: 25px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(99, 117, 141, .23);
+  color: #53657b;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: center;
+}
+.cpc-login__footer span + span::before { content: '·'; margin-right: 7px; }
+
+/* Tablet y teléfono: tarjeta centrada, logotipo dentro del formulario. */
+@media (max-width: 1120px) {
+  .cpc-login {
+    display: flex;
+    justify-content: center;
+    padding: 26px 16px;
+  }
+  .cpc-login::before {
+    inset: 0;
+    border-right: 0;
+    background: rgba(10, 23, 40, .35);
+    -webkit-backdrop-filter: blur(10px) saturate(105%);
+    backdrop-filter: blur(10px) saturate(105%);
+  }
+  .cpc-login__hero-brand { display: none; }
+  .cpc-login__glass {
+    width: min(100%, 470px);
+    margin: auto;
+  }
+  .cpc-login__brand { display: flex; }
+}
+@media (max-width: 480px) {
+  .cpc-login { padding: 15px 12px; }
+  .cpc-login__glass { padding: 25px 22px; border-radius: 19px; }
+  .cpc-login__brand img { width: 137px; }
+  .cpc-login__heading { margin-bottom: 23px; }
+  .cpc-login__heading h1 { font-size: 30px; }
+}
+@media (max-height: 680px) {
+  .cpc-login__glass { padding-top: 20px; padding-bottom: 20px; }
+  .cpc-login__brand { margin-bottom: 15px; }
+  .cpc-login__heading { margin-bottom: 15px; }
+  .cpc-login__footer { margin-top: 15px; padding-top: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cpc-login__form input, .cpc-login__submit { transition: none; }
+  .cpc-login :is(input, button) { transition: none !important; transform: none !important; }
 }
