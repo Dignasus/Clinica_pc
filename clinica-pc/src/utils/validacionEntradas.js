@@ -99,7 +99,7 @@ export function validarFormularioRegistro(formulario, etapa = 'completo') {
       }
     }
     if (campo === 'correo' && !EMAIL.test(texto)) {
-      return 'Ingresa un correo electrónico válido.';
+      return 'Correo electrónico inválido. Usa un formato como ejemplo@correo.cl.';
     }
     if (campo === 'telefono' && !validarTelefonoChileno(texto)) {
       return 'Ingresa un teléfono chileno válido (9 dígitos o +56).';
