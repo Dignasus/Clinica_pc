@@ -3,12 +3,11 @@ import { Card, Form, Row, Col, Button, Table, Badge, Alert } from 'react-bootstr
 import { useClinica } from '../context/clinicaContextBase.js';
 import './mantenedores/MantenedoresVisual.css';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
+import AdministracionRoles from './AdministracionRoles.jsx';
 
 const estadosFinales = ['entregado', 'no_presentado', 'cancelado', 'cerrada', 'finalizada'];
-const rolesPermitidos = ['tecnico', 'recepcionista', 'superusuario'];
 const normalizar = (v) => String(v ?? '').normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-const etiquetasRol = { tecnico: 'Técnico', recepcionista: 'Recepcionista', superusuario: 'Superusuario' };
 
 // Analiza CSV delimitado por comas o punto y coma y respeta campos entre comillas.
 function leerCSV(texto) {
@@ -39,6 +38,8 @@ function leerCSV(texto) {
 export default function ParametrosMantenedores({ modoOscuro = false }) {
   const { datos, dispatch } = useClinica();
   const [aviso, setAviso] = useState(null);
+  const rolesPermitidos = (datos.roles || []).map((r) => r.id);
+  const etiquetasRol = Object.fromEntries((datos.roles || []).map((r) => [r.id, r.nombre]));
   const jornadas = [...datos.jornadas].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const colores = { programada: 'primary', activa: 'success', pendiente_cierre: 'warning', finalizada: 'secondary' };
 
@@ -103,15 +104,21 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
 
   const registrarUsuarios = (usuarios) => {
     const existentes = new Set(datos.usuarios.map((u) => normalizar(u.nombre)));
+    const aliases = new Set(datos.usuarios.map((u) => String(u.usuario || '').toLowerCase()));
     const nuevos = [], duplicados = [];
     for (const u of usuarios) {
       const nombre = String(u.nombre || '').trim();
-      const rol = normalizar(u.rol);
-      if (!nombre || !rolesPermitidos.includes(rol) || existentes.has(normalizar(nombre))) {
+      const rolIngresado = String(u.rol || '').trim();
+      const rol = (datos.roles || []).find((r) =>
+        r.id === rolIngresado || normalizar(r.nombre) === normalizar(rolIngresado))?.id || '';
+      const alias = normalizar(u.usuario || nombre).replace(/[^a-z0-9]/g, '');
+      if (!nombre || !alias || aliases.has(alias) ||
+        !rolesPermitidos.includes(rol) || existentes.has(normalizar(nombre))) {
         duplicados.push(nombre || '(sin nombre)'); continue;
       }
       existentes.add(normalizar(nombre));
-      nuevos.push({ id: `USR-${crypto.randomUUID()}`, nombre, rol });
+      aliases.add(alias);
+      nuevos.push({ id: `USR-${crypto.randomUUID()}`, nombre, usuario: alias, rol });
     }
     if (nuevos.length) dispatch({ type: 'AGREGAR_USUARIOS', payload: nuevos });
     setAviso({ tipo: nuevos.length ? 'success' : 'warning',
@@ -140,7 +147,11 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
       const idxNombre = encabezados.indexOf('nombre');
       const idxRol = encabezados.indexOf('rol');
       if (idxNombre < 0 || idxRol < 0) throw new Error('El CSV debe incluir columnas nombre y rol.');
-      registrarUsuarios(filas.slice(1).map((fila) => ({ nombre: fila[idxNombre], rol: fila[idxRol] })));
+      const idxUsuario = encabezados.indexOf('usuario');
+      registrarUsuarios(filas.slice(1).map((fila) => ({
+        nombre: fila[idxNombre], rol: fila[idxRol],
+        usuario: idxUsuario === -1 ? fila[idxNombre] : fila[idxUsuario],
+      })));
       form.reset();
     } catch (err) { setAviso({ tipo: 'danger', texto: err.message || 'No se pudo leer el CSV.' }); }
   };
@@ -324,7 +335,7 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
                 <Form.Label htmlFor="mp-archivo">Archivo CSV UTF-8 *</Form.Label>
                 <Form.Control id="mp-archivo" type="file" name="archivo" accept=".csv,text/csv" required className="mp-input" />
                 <Form.Text className="mp-helper">
-                  Columnas obligatorias: <code>nombre,rol</code>. Roles: tecnico, recepcionista, superusuario. En Excel, exporta a CSV UTF-8.
+                  Columnas obligatorias: <code>nombre,rol</code>. Opcional: <code>usuario</code>. Usa IDs de roles registrados. CSV UTF-8.
                 </Form.Text>
                 <div className="d-grid mt-3">
                   <Button type="submit" variant="danger" className="mp-btn-primary">Importar personal</Button>
@@ -356,10 +367,12 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
             </Table>
           </div>
           <Alert variant="secondary" className="mp-help-note mb-0 mt-3">
-            Los integrantes nuevos pueden aparecer en las listas de asignación. El acceso por login continúa siendo simulado: agregar un usuario no crea credenciales reales.
+            Las cuentas nuevas reciben como usuario demo su nombre sin espacios ni tildes; pueden acceder con contraseña demo 123. No usar con información real.
           </Alert>
         </Card.Body>
       </Card>
+
+      <AdministracionRoles />
 
       <Card className="mp-section">
         <Card.Header className="mp-section-header">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from 'react-bootstrap';
 import './recepcion/AtencionVisual.css';
 import { useClinica } from '../context/clinicaContextBase.js';
+import { personalTecnico } from '../data/roles.js';
 import { fechaLocal, obtenerEstadoJornada, etiquetasEstadoJornada } from '../utils/jornadas.js';
 
 const normalizar = (valor) =>
@@ -20,7 +21,7 @@ export default function RecepcionEquipos({
     : null
   );
 
-  const tecnicos = datos.usuarios.filter((u) => u.rol === 'tecnico');
+  const tecnicos = personalTecnico(datos);
 
   const pendientes = datos.atenciones
     .filter((a) => a.estado === 'preinscrito')

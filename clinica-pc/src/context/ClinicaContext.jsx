@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer } from 'react';
 import { datosIniciales } from '../data/datosIniciales.js';
+import { MODULOS, rolesBase, tienePermiso } from '../data/roles.js';
 import { ClinicaContext } from './clinicaContextBase.js';
 import { fechaLocal, obtenerEstadoJornada } from '../utils/jornadas.js';
 import { encontrarRegionDeComuna } from '../data/regionesChile.js';
@@ -18,10 +19,23 @@ function cargarDatos() {
     const guardados = localStorage.getItem(STORAGE_KEY);
     if (guardados) {
       const datos = JSON.parse(guardados);
-      if (Object.keys(datosIniciales).every((clave) => Array.isArray(datos?.[clave]))) {
-        // Completar la región de registros antiguos sin borrar información.
+      // Los registros de versiones anteriores carecen de "roles": migrarlos sin borrar tickets.
+      const camposAntiguos = Object.keys(datosIniciales).filter((clave) => clave !== 'roles');
+      if (camposAntiguos.every((clave) => Array.isArray(datos?.[clave]))) {
+        const esVersionAnterior = !Array.isArray(datos.roles) || datos.roles.length === 0;
+        const roles = esVersionAnterior ? structuredClone(rolesBase) : datos.roles;
+        const alias = { matias: 'admin', camila: 'recepcion', cristian: 'tecnico' };
+        const rolesCorregidos = { matias: 'superusuario', camila: 'recepcionista', cristian: 'tecnico' };
         return {
           ...datos,
+          roles,
+          usuarios: datos.usuarios.map((u) => ({
+            ...u,
+            usuario: u.usuario || alias[u.id] || u.id.toLowerCase(),
+            // Corregir DEF-01 únicamente en la migración desde la versión de roles fijos.
+            rol: esVersionAnterior ? (rolesCorregidos[u.id] || u.rol) : u.rol,
+            nombre: esVersionAnterior && u.id === 'camila' ? 'Camila Rojas' : u.nombre,
+          })),
           propietarios: datos.propietarios.map((p) => ({
             ...p,
             region: p.region || encontrarRegionDeComuna(p.comuna) || '',
@@ -116,7 +130,7 @@ function clinicaReducer(state, action) {
       const jornada = state.jornadas.find((j) => j.id === atencion?.jornadaId);
       const jornadaHabilitada =
         jornada?.fecha === fechaLocal() && obtenerEstadoJornada(jornada) === 'activa';
-      const tecnicoValido = state.usuarios.some((u) => u.id === tecnicoId && u.rol === 'tecnico');
+      const tecnicoValido = state.usuarios.some((u) => u.id === tecnicoId && tienePermiso(state, u.rol, 'tecnico'));
       if (!atencion || atencion.estado !== 'preinscrito' || !jornadaHabilitada || !tecnicoValido)
         return state;
       return {
@@ -350,22 +364,56 @@ function clinicaReducer(state, action) {
       };
     }
 
+    case 'CREAR_ROL': {
+      const { id, nombre, permisos } = action.payload || {};
+      const nombreLimpio = String(nombre || '').trim();
+      if (!id || !nombreLimpio || state.roles.some((r) => r.id === id ||
+        r.nombre.toLowerCase() === nombreLimpio.toLowerCase())) return state;
+      const autorizados = new Set(MODULOS.map((modulo) => modulo.id));
+      const validos = [...new Set((permisos || []).filter((p) => autorizados.has(p)))];
+      return { ...state, roles: [...state.roles, { id, nombre: nombreLimpio, permisos: validos }] };
+    }
+
+    case 'ACTUALIZAR_ROL': {
+      const { id, nombre, permisos } = action.payload || {};
+      const nombreLimpio = String(nombre || '').trim();
+      const actual = state.roles.find((r) => r.id === id);
+      if (!actual || !nombreLimpio || state.roles.some((r) => r.id !== id &&
+        r.nombre.toLowerCase() === nombreLimpio.toLowerCase())) return state;
+      const autorizados = new Set(MODULOS.map((modulo) => modulo.id));
+      const validos = [...new Set((permisos || []).filter((p) => autorizados.has(p)))];
+      // No permitir bloquear por accidente la cuenta administradora del prototipo.
+      if (actual.sistema && !validos.includes('parametros')) return state;
+      return { ...state, roles: state.roles.map((r) => r.id === id
+        ? { ...r, nombre: nombreLimpio, permisos: validos } : r) };
+    }
+
+    case 'ASIGNAR_ROL_USUARIO': {
+      const { usuarioId, rolId } = action.payload || {};
+      if (!state.roles.some((r) => r.id === rolId)) return state;
+      const usuario = state.usuarios.find((u) => u.id === usuarioId);
+      if (!usuario) return state;
+      const ultimoAdministrador = usuario.rol === 'superusuario' &&
+        state.usuarios.filter((u) => u.rol === 'superusuario').length === 1;
+      if (ultimoAdministrador && rolId !== 'superusuario') return state;
+      return { ...state, usuarios: state.usuarios.map((u) => u.id === usuarioId
+        ? { ...u, rol: rolId } : u) };
+    }
+
     case 'AGREGAR_USUARIOS': {
       const lista = Array.isArray(action.payload) ? action.payload : [];
-      const roles = new Set(['tecnico', 'recepcionista', 'superusuario']);
-      const nombres = new Set(
-        state.usuarios.map((u) =>
-          String(u.nombre || '')
-            .trim()
-            .toLowerCase(),
-        ),
-      );
+      const rolesValidos = new Set(state.roles.map((r) => r.id));
+      const nombres = new Set(state.usuarios.map((u) => String(u.nombre || '').trim().toLowerCase()));
+      const aliases = new Set(state.usuarios.map((u) => String(u.usuario || '').trim().toLowerCase()));
       const nuevos = [];
       for (const usuario of lista) {
         const nombre = String(usuario.nombre || '').trim();
-        if (!nombre || !roles.has(usuario.rol) || nombres.has(nombre.toLowerCase())) continue;
+        const alias = String(usuario.usuario || '').trim().toLowerCase();
+        if (!nombre || !alias || !rolesValidos.has(usuario.rol) ||
+          nombres.has(nombre.toLowerCase()) || aliases.has(alias)) continue;
         nombres.add(nombre.toLowerCase());
-        nuevos.push({ id: usuario.id, nombre, rol: usuario.rol });
+        aliases.add(alias);
+        nuevos.push({ id: usuario.id, nombre, usuario: alias, rol: usuario.rol });
       }
       return nuevos.length ? { ...state, usuarios: [...state.usuarios, ...nuevos] } : state;
     }
