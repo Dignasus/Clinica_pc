@@ -1,6 +1,5 @@
-/* Clínica del PC · Login glass a la izquierda, fotografía INACAP a la derecha.
-   Una sola fotografía en el área derecha; el panel izquierdo usa gradientes
-   propios y desenfoque, sin duplicar el fondo del campus. */
+/* Clínica del PC · Una sola fotografía INACAP detrás de ambas columnas.
+   Lado derecho nítido; panel izquierdo esmerilado mediante backdrop-filter. */
 .cpc-login,
 .cpc-login * { box-sizing: border-box; }
 
@@ -15,42 +14,27 @@
   width: 100%;
   overflow: hidden;
   padding: clamp(18px, 4vh, 44px) 0;
-  /* Textura propia bajo el panel izquierdo: sin fotografía repetida. */
-  background:
-    radial-gradient(ellipse at 12% 16%, rgba(105, 165, 209, .46), transparent 48%),
-    radial-gradient(ellipse at 35% 87%, rgba(70, 110, 159, .38), transparent 52%),
-    linear-gradient(145deg, #1d3c60 0%, #122b4b 49%, #091a31 100%);
+  /* Una fotografía de fondo, sin copias en pseudoelementos. */
+  background-color: #243c54;
+  background-image: url('https://adfs.inacap.cl/adfs/portal/illustration/illustration.jpg?id=A36BF749E3B8F5BCB7D33EE4612467F6D5F0D2F63A2201CF70B184B0DF3CA0B2');
+  background-size: cover;
+  background-position: center 46%;
+  background-repeat: no-repeat;
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
 
-/* Única fotografía: ocupa solo la columna derecha. */
-.cpc-login::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 0 38%;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(90deg, rgba(10, 27, 48, .15), transparent 28%),
-    url('https://adfs.inacap.cl/adfs/portal/illustration/illustration.jpg?id=A36BF749E3B8F5BCB7D33EE4612467F6D5F0D2F63A2201CF70B184B0DF3CA0B2');
-  background-color: #b8cfdf;
-  background-size: cover;
-  background-position: center 46%;
-  background-repeat: no-repeat;
-}
-
-/* Panel izquierdo con vidrio esmerilado sobre los gradientes, sin foto. */
+/* Cristal esmerilado sobre LA MISMA fotografía, solo en el lado izquierdo. */
 .cpc-login::before {
   content: '';
   position: absolute;
   inset: 0 62% 0 0;
   z-index: 1;
   pointer-events: none;
-  background: rgba(10, 26, 47, .36);
-  border-right: 1px solid rgba(255, 255, 255, .21);
-  -webkit-backdrop-filter: blur(22px) saturate(110%);
-  backdrop-filter: blur(22px) saturate(110%);
+  background: rgba(12, 29, 49, .30);
+  border-right: 1px solid rgba(255, 255, 255, .25);
+  -webkit-backdrop-filter: blur(26px) saturate(110%);
+  backdrop-filter: blur(26px) saturate(110%);
 }
 
 /* Identidad institucional sobre el área fotográfica. */
@@ -288,16 +272,12 @@
     justify-content: center;
     padding: 26px 16px;
   }
-  .cpc-login::after {
-    inset: 0;
-    background-position: center 46%;
-  }
   .cpc-login::before {
     inset: 0;
     border-right: 0;
-    background: rgba(10, 23, 40, .32);
-    -webkit-backdrop-filter: blur(8px) saturate(100%);
-    backdrop-filter: blur(8px) saturate(100%);
+    background: rgba(10, 23, 40, .35);
+    -webkit-backdrop-filter: blur(10px) saturate(105%);
+    backdrop-filter: blur(10px) saturate(105%);
   }
   .cpc-login__hero-brand { display: none; }
   .cpc-login__glass {
