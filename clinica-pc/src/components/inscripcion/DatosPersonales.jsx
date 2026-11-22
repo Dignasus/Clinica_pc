@@ -2,7 +2,7 @@ import { Col, Form, Row } from 'react-bootstrap';
 import { REGIONES_CHILE, comunasDeRegion, encontrarRegionDeComuna } from '../../data/regionesChile.js';
 import { LIMITES_REGISTRO } from '../../utils/validacionEntradas.js';
 
-export default function DatosPersonales({ formData = {}, onChange, modoOscuro = false }) {
+export default function DatosPersonales({ formData = {}, onChange, modoOscuro = false, errorCorreo = '' }) {
   const controlClass = modoOscuro ? 'bg-dark text-light' : '';
   // Soporte de datos de prueba antiguos que solo tienen comuna.
   const regionElegida = formData.region || encontrarRegionDeComuna(formData.comuna);
@@ -56,7 +56,13 @@ export default function DatosPersonales({ formData = {}, onChange, modoOscuro = 
         <Form.Group controlId="propietario-correo">
           <Form.Label className="fw-bold">Correo electrónico *</Form.Label>
           <Form.Control name="correo" maxLength={LIMITES_REGISTRO.correo} type="email" value={formData.correo || ''}
-            onChange={onChange} placeholder="correo@ejemplo.cl" required className={controlClass} />
+            onChange={onChange} placeholder="ejemplo@correo.cl" required className={controlClass}
+            isInvalid={Boolean(errorCorreo)} aria-describedby={errorCorreo ? 'error-correo-propietario' : undefined} />
+          {errorCorreo && (
+            <Form.Control.Feedback type="invalid" id="error-correo-propietario" role="alert">
+              {errorCorreo}
+            </Form.Control.Feedback>
+          )}
         </Form.Group>
       </Col>
       <Col md={6}>
