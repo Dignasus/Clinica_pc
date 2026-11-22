@@ -588,6 +588,11 @@ export default function RegistroPresencial({
         </div>
       </div>
 
+      <Alert variant="secondary" className="small" role="note">
+        <strong>Solo demostración:</strong> registra datos ficticios. Los datos quedan
+        en el almacenamiento local del navegador, sin cifrado ni sincronización.
+      </Alert>
+
       <Form onSubmit={registrar} className="cp-register-form">
         <nav className="cp-register-steps" aria-label="Pasos del registro presencial">
           {[
