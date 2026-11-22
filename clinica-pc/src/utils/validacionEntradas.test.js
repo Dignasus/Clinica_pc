@@ -53,9 +53,11 @@ test('rechaza nombre con etiqueta HTML', () => {
 test('rechaza caracteres invisibles de control en textos estructurados', () => {
   assert.match(validarFormularioRegistro({ ...valido(), sector: 'Centro\u202Eoculto' }), /Sector/);
 });
-test('rechaza email inválido, pero acepta dominio válido', () => {
-  assert.match(validarFormularioRegistro({ ...valido(), correo: 'a@@b.cl' }), /correo/i);
+test('muestra un ejemplo claro al rechazar correos inválidos', () => {
+  const error = validarFormularioRegistro({ ...valido(), correo: 'prueba@@example.com' });
+  assert.equal(error, 'Correo electrónico inválido. Usa un formato como ejemplo@correo.cl.');
   assert.equal(validarFormularioRegistro({ ...valido(), correo: 'persona+etiqueta@inacapmail.cl' }), null);
+  assert.equal(validarFormularioRegistro({ ...valido(), correo: 'ejemplo@correo.cl' }), null);
 });
 test('teléfonos nacionales y +56; impide letras y largos incorrectos', () => {
   assert.equal(validarTelefonoChileno('912345678'), true);
