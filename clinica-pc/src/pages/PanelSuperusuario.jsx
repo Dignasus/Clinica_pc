@@ -116,7 +116,7 @@ export default function PanelSuperusuario() {
         return <PanelTecnico modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} usuarioId={idSesion} puedeVerTodos={permisos.parametros} />;
 
       case 'historial':
-        return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} puedeGestionarSeguimiento={permisos.parametros} usuarioId={idSesion} />;
+        return <HistorialConsultas modoOscuro={modoOscuro} periodoGlobal={periodoGlobal} puedeGestionarSeguimiento={permisos.parametros} puedeGestionarCustodia={permisos.recepcion || permisos.parametros} usuarioId={idSesion} />;
 
       case 'parametros':
         return <ParametrosMantenedores modoOscuro={modoOscuro} />;

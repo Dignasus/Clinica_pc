@@ -11,13 +11,14 @@ const estados = {
   en_proceso: { nombre: 'En proceso', color: 'info' },
   listo_entrega: { nombre: 'Listo para entrega', color: 'primary' },
   contactado: { nombre: 'Contactado', color: 'primary' },
+  en_custodia: { nombre: 'En custodia', color: 'warning' },
   entregado: { nombre: 'Entregado', color: 'success' },
   no_presentado: { nombre: 'No presentado', color: 'danger' },
   cancelado: { nombre: 'Cancelado', color: 'secondary' },
 };
 
 const estadosActivos = [
-  'preinscrito', 'asignado', 'en_proceso', 'listo_entrega', 'contactado',
+  'preinscrito', 'asignado', 'en_proceso', 'listo_entrega', 'contactado', 'en_custodia',
 ];
 
 const obtenerClave = (registro) =>
@@ -85,7 +86,7 @@ function IconoArchivo() {
   );
 }
 
-export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos', puedeGestionarSeguimiento = false, usuarioId = '' }) {
+export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos', puedeGestionarSeguimiento = false, puedeGestionarCustodia = false, usuarioId = '' }) {
   const { datos } = useClinica();
 
   const [busqueda, setBusqueda] = useState('');
@@ -291,7 +292,8 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
 
           <DetalleAtencion registro={seleccionado} datos={datos}
             modoOscuro={modoOscuro} onVolver={() => setSeleccionadoId(null)}
-            puedeGestionarSeguimiento={puedeGestionarSeguimiento} usuarioId={usuarioId} />
+            puedeGestionarSeguimiento={puedeGestionarSeguimiento}
+            puedeGestionarCustodia={puedeGestionarCustodia} usuarioId={usuarioId} />
         </>
       ) : (
         <>

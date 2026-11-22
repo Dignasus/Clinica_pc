@@ -1,6 +1,7 @@
 import { Alert } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
 import { personalTecnico } from '../data/roles.js';
+import { obtenerCargaTecnicosPorPeriodo } from '../utils/cargaTecnicos.js';
 import DashboardMetricCard from './dashboard/DashboardMetricCard.jsx';
 import MonitorTecnicos from './dashboard/MonitorTecnicos.jsx';
 import OcupacionTaller from './dashboard/OcupacionTaller.jsx';
@@ -21,23 +22,14 @@ export default function InicioDashboard({
   const preinscripciones = atenciones.filter((a) => a.estado === 'preinscrito').length;
   const equiposEnTaller = atenciones.filter((a) => estadosTaller.includes(a.estado)).length;
   const trabajosEnProceso = atenciones.filter((a) => a.estado === 'en_proceso').length;
-  const pendientesEntrega = atenciones.filter((a) => ['listo_entrega', 'contactado'].includes(a.estado)).length;
+  const pendientesEntrega = atenciones.filter((a) => ['listo_entrega', 'contactado', 'en_custodia'].includes(a.estado)).length;
   const entregados = atenciones.filter((a) => a.estado === 'entregado').length;
 
   const tecnicoActual = personalTecnico(datos).find((u) => u.id === usuarioId);
   const misTareas = atenciones.filter((a) => estadosTaller.includes(a.estado) &&
     a.tecnicoIds?.includes(tecnicoActual?.id)).length;
 
-  const tecnicos = personalTecnico(datos).map((tecnico) => {
-    const tareas = atenciones.filter((a) => estadosTaller.includes(a.estado) &&
-      a.tecnicoIds?.includes(tecnico.id));
-    const enProceso = tareas.filter((a) => a.estado === 'en_proceso').length;
-    return {
-      nombre: tecnico.nombre,
-      estado: enProceso > 0 ? `En proceso (${enProceso})`
-        : tareas.length > 0 ? `Asignado (${tareas.length})` : 'Sin tareas registradas',
-    };
-  });
+  const resumenTecnicos = obtenerCargaTecnicosPorPeriodo(datos, periodoGlobal);
 
   const puedeVerEquipos = permisos.inicio;
   const puedeVerPreinscripciones = permisos.recepcion;
@@ -109,7 +101,7 @@ export default function InicioDashboard({
           </div>
         </section>
       )}
-      {puedeVerTecnicos && <MonitorTecnicos modoOscuro={modoOscuro} tecnicos={tecnicos} />}
+      {puedeVerTecnicos && <MonitorTecnicos modoOscuro={modoOscuro} {...resumenTecnicos} />}
     </div>
   );
 }

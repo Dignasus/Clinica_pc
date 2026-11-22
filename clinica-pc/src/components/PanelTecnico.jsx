@@ -8,10 +8,11 @@ import EntregaEquipo from './tecnico/EntregaEquipo.jsx';
 import './tecnico/PanelTecnicoVisual.css';
 
 const inspeccionVacia = { encendido: '', estadoFisico: '', accesorios: '' };
-const estadosVisibles = ['asignado', 'en_proceso', 'listo_entrega', 'contactado'];
+const estadosVisibles = ['asignado', 'en_proceso', 'listo_entrega', 'contactado', 'en_custodia'];
 const etiquetas = {
   asignado: 'Asignado', en_proceso: 'En proceso',
   listo_entrega: 'Listo para entrega', contactado: 'Propietario avisado',
+  en_custodia: 'En custodia · pendiente de retiro',
 };
 
 export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usuarioId = '', puedeVerTodos = false }) {
@@ -132,10 +133,14 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usua
       <div className={layoutClass}>
         <EntregaEquipo key={atencion.id} atencion={atencion}
           dispositivo={detalle.dispositivo} propietario={detalle.propietario}
-          modoOscuro={modoOscuro} onVolver={() => setSeleccion(null)}
+          usuarioId={usuarioId} modoOscuro={modoOscuro} onVolver={() => setSeleccion(null)}
           onEntregada={() => {
             setSeleccion(null);
-            setMensaje('Equipo entregado físicamente. El ticket permanece abierto hasta recibir y revisar la encuesta posterior. Consulta su seguimiento en Historial y consultas.');
+            setMensaje('Retiro efectivo registrado. El ticket queda abierto hasta revisar la encuesta posterior.');
+          }}
+          onCustodia={() => {
+            setSeleccion(null);
+            setMensaje('Equipo transferido a custodia. Todavía no está entregado al cliente; la encuesta no ha comenzado.');
           }} />
       </div>
     );
@@ -318,7 +323,7 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usua
                         {a.estado !== 'asignado' && (
                           <Button size="sm" variant="danger" className="pc-tech-primary"
                             onClick={() => { setSeleccion({ id: a.id, modo: 'entrega' }); setMensaje(''); }}>
-                            Gestionar entrega
+                            Gestionar entrega o custodia
                           </Button>
                         )}
                       </div>
@@ -331,7 +336,7 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usua
                   <div className="pc-tech-empty">
                     <span className="pc-tech-empty-icon" aria-hidden="true">✓</span>
                     <strong>No hay atenciones técnicas activas</strong>
-                    <p>No hay dispositivos pendientes de trabajo en el período seleccionado.</p>
+                    <p>No hay trabajos técnicos, retiros ni custodias pendientes en el período seleccionado.</p>
                   </div>
                 </td></tr>
               )}
