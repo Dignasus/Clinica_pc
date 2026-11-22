@@ -381,6 +381,11 @@ export default function InscripcionQR({ modoOscuro: modoOscuroInicial = false })
         </div>
       </header>
 
+      <Alert variant="secondary" className="small" role="note">
+        <strong>Demostración académica:</strong> usa datos ficticios. La información se
+        guarda únicamente en este navegador; no ingreses RUT ni contactos reales.
+      </Alert>
+
       {error && (
         <Alert variant="danger" role="alert" dismissible onClose={() => setError('')}>
           {error}
