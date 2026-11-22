@@ -49,6 +49,10 @@ export default function Login() {
 
   return (
     <main className="cpc-login">
+      <div className="cpc-login__hero-brand">
+        <img src={logoInacap} alt="INACAP" />
+        <span>APRENDER<br />HACIENDO</span>
+      </div>
       <section className="cpc-login__glass" aria-labelledby="cpc-login-title">
         <header className="cpc-login__brand">
           <img src={logoInacap} alt="INACAP" />
