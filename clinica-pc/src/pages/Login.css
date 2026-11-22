@@ -1,42 +1,94 @@
-/* Clínica del PC · Login glass: prueba de fachada institucional panorámica.
-   Foto pública en el sitio de INACAP; el archivo local anterior queda como respaldo. */
+/* Clínica del PC · Login dividido inspirado en la referencia del equipo.
+   Fondo local para evitar enlaces externos rotos. */
 .cpc-login,
 .cpc-login * { box-sizing: border-box; }
 
 .cpc-login {
   position: relative;
   isolation: isolate;
-  display: flex;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: minmax(0, 62fr) minmax(420px, 38fr);
   align-items: center;
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
   overflow: hidden;
-  padding: clamp(18px, 4vh, 44px) clamp(14px, 3vw, 36px);
+  padding: clamp(18px, 4vh, 44px) 0;
   background-color: #14233b;
   background-image:
-    linear-gradient(110deg, rgba(9, 21, 41, .44), rgba(12, 29, 52, .18) 50%, rgba(9, 21, 41, .44)),
-    url('https://portales.inacap.cl/Assets/sedes/puente-alto/fachada-puente-alto-1280x600.jpg'),
+    linear-gradient(90deg, rgba(9, 21, 41, .18), rgba(9, 21, 41, .08) 48%, rgba(9, 21, 41, .34)),
     url('../assets/login-campus.jpg');
   background-size: cover;
-  background-position: center;
+  background-position: center 48%;
   background-repeat: no-repeat;
   color: #172238;
   font-family: 'Segoe UI', Inter, system-ui, sans-serif;
 }
 
-/* Foto continua, recorte proporcional sin difuminar ni estirar los laterales. */
+/* Panel derecho desenfocado: el formulario no tapa los rostros. */
+.cpc-login::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 62%;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(13, 30, 50, .52);
+  border-left: 1px solid rgba(255, 255, 255, .14);
+  -webkit-backdrop-filter: blur(14px) saturate(90%);
+  backdrop-filter: blur(14px) saturate(90%);
+}
+
+/* Identidad institucional sobre el área fotográfica. */
+.cpc-login__hero-brand {
+  position: absolute;
+  z-index: 1;
+  top: clamp(28px, 7vh, 72px);
+  left: clamp(24px, 5vw, 80px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: calc(62% - 48px);
+  padding: 15px 19px;
+  border: 1px solid rgba(255, 255, 255, .56);
+  border-radius: 15px;
+  background: rgba(247, 250, 255, .84);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 14px 44px rgba(6, 17, 35, .19);
+}
+
+.cpc-login__hero-brand img {
+  display: block;
+  width: clamp(150px, 17vw, 220px);
+  max-height: 73px;
+  object-fit: contain;
+}
+
+.cpc-login__hero-brand span {
+  padding-left: 14px;
+  border-left: 1px solid #aab8c9;
+  color: #1d304d;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+/* En escritorio el logotipo se presenta sobre la fotografía, sin duplicarse en la tarjeta. */
+.cpc-login__brand { display: none; }
+
+/* Tarjeta interactiva centrada dentro del panel derecho. */
 .cpc-login__glass {
   position: relative;
   z-index: 2;
-  width: min(100%, 470px);
+  grid-column: 2;
+  justify-self: center;
+  width: min(calc(100% - 44px), 440px);
   min-width: 0;
-  margin: auto;
+  margin: 0;
   padding: clamp(25px, 3vw, 38px);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, .82);
-  background: rgba(244, 248, 254, .85);
+  background: rgba(244, 248, 254, .86);
   -webkit-backdrop-filter: blur(18px) saturate(135%);
   backdrop-filter: blur(18px) saturate(135%);
   box-shadow: 0 26px 80px rgba(1, 12, 31, .30), inset 0 1px 0 rgba(255, 255, 255, .54);
@@ -214,7 +266,28 @@
 }
 .cpc-login__footer span + span::before { content: '·'; margin-right: 7px; }
 
-/* El formulario sigue centrado y con la fotografía visible en todas las pantallas. */
+/* Tablet y teléfono: tarjeta centrada, logotipo dentro del formulario. */
+@media (max-width: 960px) {
+  .cpc-login {
+    display: flex;
+    justify-content: center;
+    padding: 26px 16px;
+    background-position: center 45%;
+  }
+  .cpc-login::before {
+    inset: 0;
+    border-left: 0;
+    background: rgba(10, 23, 40, .40);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+  .cpc-login__hero-brand { display: none; }
+  .cpc-login__glass {
+    width: min(100%, 470px);
+    margin: auto;
+  }
+  .cpc-login__brand { display: flex; }
+}
 @media (max-width: 480px) {
   .cpc-login { padding: 15px 12px; }
   .cpc-login__glass { padding: 25px 22px; border-radius: 19px; }
