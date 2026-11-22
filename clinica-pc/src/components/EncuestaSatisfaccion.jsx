@@ -1,88 +1,129 @@
 import { useState } from 'react';
-import { Card, Form, Button, Alert } from 'react-bootstrap';
+import { Alert, Button, Card, Form } from 'react-bootstrap';
+import { Link, useParams } from 'react-router-dom';
+import { useClinica } from '../context/clinicaContextBase.js';
 
-export default function EncuestaSatisfaccion({ modoOscuro }) {
-  const [enviado, setEnviado] = useState(false);
-  const [evaluacion, setEvaluacion] = useState({
-    calificacion: '',
-    resuelto: '',
-    comentarios: ''
-  });
+// La encuesta usa datos de la MISMA instalación local del prototipo.
+// En producción se necesita una API para recibir respuestas desde otro dispositivo.
+export default function EncuestaSatisfaccion() {
+  const { token } = useParams();
+  const { datos, dispatch } = useClinica();
+  const [calificacion, setCalificacion] = useState('');
+  const [funcionamiento, setFuncionamiento] = useState('');
+  const [comentarios, setComentarios] = useState('');
+  const [mensaje, setMensaje] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEvaluacion(prev => ({ ...prev, [name]: value }));
+  const atencion = datos.atenciones.find((a) => a.seguimiento?.token === token);
+  const dispositivo = datos.dispositivos.find((d) => d.id === atencion?.dispositivoId);
+  const respondida = Boolean(atencion?.seguimiento?.respuesta);
+  const disponible = atencion?.estado === 'entregado' &&
+    atencion.seguimiento?.estado === 'enviada_demo' && !respondida && !atencion.cierreTicket;
+
+  const enviar = (event) => {
+    event.preventDefault();
+    if (!disponible) return;
+    if (!calificacion || !['bien', 'parcial', 'mal'].includes(funcionamiento) ||
+      (funcionamiento !== 'bien' && !comentarios.trim())) {
+      setMensaje('Completa la evaluación y describe cualquier problema detectado.');
+      return;
+    }
+    dispatch({
+      type: 'RESPONDER_ENCUESTA',
+      payload: { token, calificacion: Number(calificacion), funcionamiento, comentarios: comentarios.trim() },
+    });
   };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Encuesta enviada:", evaluacion);
-    setEnviado(true);
-  };
-
-  const cardClass = `shadow-sm border-0 mb-4 ${modoOscuro ? 'bg-dark text-light' : ''}`;
-  const headerClass = `fw-bold py-3 text-white`;
-  const titleColor = modoOscuro ? '#ff6666' : '#cc0000';
-
-  if (enviado) {
-    return (
-      <Alert variant="success" className="text-center p-5 shadow-sm border-0">
-        <h4 className="fw-bold mb-3">¡Gracias por su opinión!</h4>
-        <p className="mb-0">Sus respuestas nos ayudan a mejorar la calidad de servicio en la Clínica del PC INACAP.</p>
-      </Alert>
-    );
-  }
 
   return (
-    <>
-      <div className="mb-4">
-        <h3 style={{ color: titleColor, fontWeight: 'bold' }}>Encuesta de Satisfacción</h3>
-        <p className={modoOscuro ? 'text-light' : 'text-muted'}>
-          Por favor, califique la atención recibida al momento de retirar su equipo.
-        </p>
-      </div>
-
-      <Form onSubmit={handleSubmit}>
-        <Card className={cardClass}>
-          <Card.Header className={headerClass} style={{ backgroundColor: '#cc0000' }}>
-            Evaluación del Servicio Técnico
+    <main className="min-vh-100 py-4 px-3 bg-body-tertiary">
+      <div className="mx-auto" style={{ maxWidth: '740px' }}>
+        <Card className="shadow-sm border-0">
+          <Card.Header className="bg-danger text-white p-4">
+            <h1 className="h4 mb-1">Clínica del PC · Seguimiento de servicio</h1>
+            <p className="mb-0">Encuesta posterior a la entrega del equipo</p>
           </Card.Header>
           <Card.Body className="p-4">
-            
-            <Form.Group className="mb-4">
-              <Form.Label className="fw-bold">1. ¿Cómo calificaría la atención general del técnico que le entregó el equipo? *</Form.Label>
-              <Form.Select name="calificacion" required onChange={handleChange} value={evaluacion.calificacion} className={modoOscuro ? 'bg-dark text-light' : ''}>
-                <option value="">Seleccione una nota...</option>
-                <option value="5">⭐⭐⭐⭐⭐ - Excelente</option>
-                <option value="4">⭐⭐⭐⭐ - Buena</option>
-                <option value="3">⭐⭐⭐ - Regular</option>
-                <option value="2">⭐⭐ - Mala</option>
-                <option value="1">⭐ - Muy Mala</option>
-              </Form.Select>
-            </Form.Group>
+            <Alert variant="info">
+              Versión académica: esta encuesta funciona únicamente con los datos guardados
+              en este navegador. No recibe ni envía información por correo.
+            </Alert>
 
-            <Form.Group className="mb-4">
-              <Form.Label className="fw-bold d-block">2. Tras realizar las pruebas junto al técnico, ¿su equipo quedó funcionando correctamente? *</Form.Label>
-              <div className="d-flex gap-4">
-                <Form.Check type="radio" label="Sí, problema resuelto" name="resuelto" value="si" required onChange={handleChange} />
-                <Form.Check type="radio" label="No, sigue con fallas" name="resuelto" value="no" required onChange={handleChange} />
-              </div>
-            </Form.Group>
+            {!atencion && (
+              <Alert variant="warning">No se encontró esta encuesta en los datos locales del navegador.</Alert>
+            )}
 
-            <Form.Group className="mb-4">
-              <Form.Label className="fw-bold">3. Comentarios o sugerencias (Opcional)</Form.Label>
-              <Form.Control as="textarea" rows={3} name="comentarios" value={evaluacion.comentarios} onChange={handleChange} placeholder="Cuéntenos más sobre su experiencia..." className={modoOscuro ? 'bg-dark text-light' : ''} />
-            </Form.Group>
+            {atencion && (
+              <p className="text-muted">
+                Equipo: <strong>{dispositivo?.marca || 'Dispositivo'} {dispositivo?.modelo || ''}</strong>
+                {' · '}Atención: {atencion.id}
+              </p>
+            )}
 
-            <div className="d-grid">
-              <Button type="submit" size="lg" variant={modoOscuro ? "light" : "danger"} className="fw-bold">
-                Enviar Evaluación
-              </Button>
+            {respondida && (
+              <Alert variant="success">
+                <strong>¡Gracias por responder!</strong>
+                <p className="mb-0">La evaluación quedó registrada en este prototipo.
+                  El ticket sigue sujeto a la revisión del personal encargado.</p>
+              </Alert>
+            )}
+
+            {atencion && !respondida && !disponible && (
+              <Alert variant="warning">La encuesta aún no está habilitada para responder.</Alert>
+            )}
+
+            {disponible && (
+              <Form onSubmit={enviar}>
+                <Form.Group className="mb-4" controlId="encuesta-calificacion">
+                  <Form.Label>¿Cómo calificarías la atención del servicio técnico? *</Form.Label>
+                  <Form.Select required value={calificacion}
+                    onChange={(e) => setCalificacion(e.target.value)}>
+                    <option value="">Selecciona una nota</option>
+                    <option value="5">5 · Excelente</option>
+                    <option value="4">4 · Buena</option>
+                    <option value="3">3 · Regular</option>
+                    <option value="2">2 · Mala</option>
+                    <option value="1">1 · Muy mala</option>
+                  </Form.Select>
+                </Form.Group>
+
+                <fieldset className="mb-4">
+                  <legend className="fs-6 fw-semibold">
+                    Después de algunos días de uso, ¿cómo funciona tu computador? *
+                  </legend>
+                  <Form.Check type="radio" name="funcionamiento" id="enc-bien"
+                    label="Sigue funcionando correctamente" value="bien"
+                    checked={funcionamiento === 'bien'}
+                    onChange={(e) => setFuncionamiento(e.target.value)} required />
+                  <Form.Check type="radio" name="funcionamiento" id="enc-parcial"
+                    label="Funciona, pero tiene algunos problemas" value="parcial"
+                    checked={funcionamiento === 'parcial'}
+                    onChange={(e) => setFuncionamiento(e.target.value)} />
+                  <Form.Check type="radio" name="funcionamiento" id="enc-mal"
+                    label="Volvió a fallar o ya no funciona correctamente" value="mal"
+                    checked={funcionamiento === 'mal'}
+                    onChange={(e) => setFuncionamiento(e.target.value)} />
+                </fieldset>
+
+                <Form.Group className="mb-4" controlId="encuesta-comentarios">
+                  <Form.Label>
+                    {funcionamiento === 'bien'
+                      ? 'Comentarios o sugerencias (opcional)'
+                      : 'Describe los problemas que aparecieron después de la entrega *'}
+                  </Form.Label>
+                  <Form.Control as="textarea" rows={4} maxLength={2000}
+                    required={funcionamiento !== 'bien'}
+                    value={comentarios} onChange={(e) => setComentarios(e.target.value)}
+                    placeholder="Cuéntanos cómo ha funcionado el equipo después de la atención..." />
+                </Form.Group>
+                {mensaje && <Alert variant="warning">{mensaje}</Alert>}
+                <Button variant="danger" size="lg" type="submit">Enviar evaluación</Button>
+              </Form>
+            )}
+            <div className="mt-4">
+              <Link to="/">Volver al inicio</Link>
             </div>
-
           </Card.Body>
         </Card>
-      </Form>
-    </>
+      </div>
+    </main>
   );
 }

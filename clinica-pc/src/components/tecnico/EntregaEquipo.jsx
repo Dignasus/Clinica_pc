@@ -74,7 +74,7 @@ export default function EntregaEquipo({
 
     dispatch({
       type: 'CONFIRMAR_ENTREGA',
-      payload: { atencionId: atencion.id, entrega },
+      payload: { atencionId: atencion.id, entrega, token: crypto.randomUUID() },
     });
 
     onEntregada();
@@ -84,7 +84,7 @@ export default function EntregaEquipo({
     <div className="pc-tech-delivery">
       <div className="pc-tech-heading">
         <div>
-          <span className="pc-tech-eyebrow">CLÍNICA DEL PC / CIERRE DE ATENCIÓN</span>
+          <span className="pc-tech-eyebrow">CLÍNICA DEL PC / ENTREGA DEL EQUIPO</span>
           <h2>Verificación y entrega</h2>
           <p>{dispositivo.marca} {dispositivo.modelo} · {propietario.nombre} {propietario.apellidoPaterno}</p>
         </div>
@@ -226,12 +226,12 @@ export default function EntregaEquipo({
         <Form onSubmit={confirmarEntrega}>
           <Card className={cardClass}>
             <Card.Header className="pc-tech-card-head"><span className="pc-tech-number">03</span>
-                <div><strong>Entrega y cierre de atención</strong><small>Confirmación conjunta con el propietario</small></div>
+                <div><strong>Entrega física y seguimiento posterior</strong><small>La entrega no cierra el ticket</small></div>
               </Card.Header>
             <Card.Body className="pc-tech-card-body">
               <Alert variant="info">
                 El contacto está registrado. Verifica el dispositivo junto al
-                propietario antes de cerrar esta atención.
+                propietario. El ticket continuará abierto para la encuesta posterior.
               </Alert>
 
               <Form.Group className="mb-3">
@@ -267,7 +267,7 @@ export default function EntregaEquipo({
                 onChange={(e) => actualizar(setEntrega, 'pruebaConPropietario', e.target.checked)} />
 
               <Button type="submit" variant={botonVariante} size="lg" className="pc-tech-primary">
-                Confirmar entrega y cerrar atención
+                Confirmar entrega e iniciar seguimiento
               </Button>
             </Card.Body>
           </Card>

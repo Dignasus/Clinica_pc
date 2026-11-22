@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import { Alert, Badge, Button, Card, Col, Form, Row, Table } from 'react-bootstrap';
 import { useClinica } from '../context/clinicaContextBase.js';
 import DetalleAtencion from './historial/DetalleAtencion.jsx';
+import { estadoTicket, etiquetasTicket } from '../utils/seguimiento.js';
 import './historial/HistorialVisual.css';
 
 const estados = {
@@ -41,6 +42,14 @@ function EstadoBadge({ valor }) {
   );
 }
 
+function TicketBadge({ atencion }) {
+  const estado = estadoTicket(atencion);
+  const color = estado === 'cerrado' ? 'success' : estado === 'incidencia' ? 'danger' : 'warning';
+  return <Badge bg={color} text={color === 'warning' ? 'dark' : undefined}>
+    {etiquetasTicket[estado] || estado}
+  </Badge>;
+}
+
 function nombrePropietario(propietario) {
   if (!propietario) return 'Sin propietario';
   return [
@@ -76,7 +85,7 @@ function IconoArchivo() {
   );
 }
 
-export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos' }) {
+export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos', puedeGestionarSeguimiento = false, usuarioId = '' }) {
   const { datos } = useClinica();
 
   const [busqueda, setBusqueda] = useState('');
@@ -172,7 +181,7 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
     : [];
 
   const entregados = filtrados.filter((r) => r.estado === 'entregado').length;
-  const activos = filtrados.filter((r) => estadosActivos.includes(r.estado)).length;
+  const activos = filtrados.filter((r) => estadosActivos.includes(r.estado) || (r.estado === 'entregado' && estadoTicket(r) !== 'cerrado')).length;
 
   const limpiarFiltros = () => {
     setBusqueda('');
@@ -207,7 +216,8 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
           <th>Período</th>
           <th>Técnico asignado</th>
           <th>Servicio</th>
-          <th>Estado</th>
+          <th>Estado del equipo</th>
+          <th>Estado del ticket</th>
           <th className="text-end">Acción</th>
         </tr>
       </thead>
@@ -220,6 +230,7 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
             <td>{tecnicosDe(visita)}</td>
             <td>{serviciosDe(visita)}</td>
             <td><EstadoBadge valor={visita.estado} /></td>
+            <td><TicketBadge atencion={visita} /></td>
             <td className="text-end">
               <Button size="sm" className={`hist-btn ${seleccionadoId === visita.id ? 'hist-btn--red' : 'hist-btn--outline'}`}
                 variant="link" onClick={() => setSeleccionadoId(visita.id)}>
@@ -279,7 +290,8 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
           </Card>
 
           <DetalleAtencion registro={seleccionado} datos={datos}
-            modoOscuro={modoOscuro} onVolver={() => setSeleccionadoId(null)} />
+            modoOscuro={modoOscuro} onVolver={() => setSeleccionadoId(null)}
+            puedeGestionarSeguimiento={puedeGestionarSeguimiento} usuarioId={usuarioId} />
         </>
       ) : (
         <>
@@ -352,10 +364,10 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
               <span>Atenciones filtradas</span><strong>{filtrados.length}</strong><small>Coinciden con los filtros</small>
             </div>
             <div className="hist-stat hist-stat--delivered">
-              <span>Entregados</span><strong>{entregados}</strong><small>Atenciones finalizadas</small>
+              <span>Entregados</span><strong>{entregados}</strong><small>Equipos entregados físicamente</small>
             </div>
             <div className="hist-stat hist-stat--active">
-              <span>Activos</span><strong>{activos}</strong><small>Atenciones abiertas</small>
+              <span>Tickets abiertos</span><strong>{activos}</strong><small>Incluye equipos entregados sin cierre</small>
             </div>
           </section>
 
@@ -380,7 +392,8 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
                         <th>Visitas totales</th>
                         <th>Última jornada</th>
                         <th>Técnico asignado</th>
-                        <th>Último estado</th>
+                        <th>Último estado físico</th>
+                         <th>Estado del ticket</th>
                         <th className="text-end">Acción</th>
                       </tr>
                     </thead>
@@ -409,6 +422,7 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
                               <td>{ultima?.jornada?.fecha || 'Sin fecha'}</td>
                               <td>{tecnicosDe(ultima)}</td>
                               <td><EstadoBadge valor={ultima?.estado} /></td>
+                              <td><TicketBadge atencion={ultima} /></td>
                               <td className="text-end">
                                 <Button size="sm" variant="link" className="hist-btn hist-btn--outline"
                                   aria-expanded={abierto}
@@ -421,7 +435,7 @@ export default function HistorialConsultas({ modoOscuro, periodoGlobal = 'Todos'
                             </tr>
                             {abierto && (
                               <tr className="hist-expanded-row">
-                                <td colSpan={8}>
+                                <td colSpan={9}>
                                   <div className="hist-expanded">
                                     <div className="hist-expanded__heading">
                                       <strong>Historial completo · {nombreDispositivo(grupo.dispositivo)}</strong>

@@ -71,8 +71,8 @@ export default function ParametrosMantenedores({ modoOscuro = false }) {
   };
   const cerrarJornada = (j) => {
     const abiertas = datos.atenciones.filter((a) => a.jornadaId === j.id && !estadosFinales.includes(a.estado));
-    if (abiertas.length) return setAviso({ tipo: 'warning', texto: `No se puede cerrar: hay ${abiertas.length} atención(es) sin resolver.` });
-    if (window.confirm(`¿Finalizar administrativamente la jornada del ${j.fecha}?`)) {
+    if (abiertas.length) return setAviso({ tipo: 'warning', texto: `No se puede cerrar la jornada presencial: hay ${abiertas.length} atención(es) que aún requieren gestión en taller.` });
+    if (window.confirm(`¿Finalizar administrativamente la jornada presencial del ${j.fecha}? Los tickets en seguimiento continuarán abiertos.`)) {
       dispatch({ type: 'CERRAR_JORNADA', payload: j.id });
     }
   };

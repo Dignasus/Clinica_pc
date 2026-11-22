@@ -104,7 +104,7 @@ export default function InicioDashboard({
             )}
             {puedeVerEquipos && (
               <DashboardMetricCard modoOscuro={modoOscuro} titulo="Equipos entregados"
-                valor={entregados} icono="entrega" descripcion="Atenciones finalizadas" tono="verde" />
+                valor={entregados} icono="entrega" descripcion="Equipos entregados físicamente" tono="verde" />
             )}
           </div>
         </section>

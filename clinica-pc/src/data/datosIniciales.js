@@ -12,9 +12,9 @@ export const datosIniciales = {
   ],
 
   usuarios: [
-    { id: 'matias', nombre: 'Matías Carrasco', usuario: 'admin', rol: 'superusuario' },
-    { id: 'cristian', nombre: 'Cristian', usuario: 'tecnico', rol: 'tecnico' },
-    { id: 'camila', nombre: 'Camila Rojas', usuario: 'recepcion', rol: 'recepcionista' },
+    { id: 'matias', nombre: 'Matías Carrasco', usuario: 'admin', rol: 'superusuario', habilitadoTecnico: false },
+    { id: 'cristian', nombre: 'Cristian', usuario: 'tecnico', rol: 'tecnico', habilitadoTecnico: true },
+    { id: 'camila', nombre: 'Camila Rojas', usuario: 'recepcion', rol: 'recepcionista', habilitadoTecnico: false },
   ],
 
   servicios: [

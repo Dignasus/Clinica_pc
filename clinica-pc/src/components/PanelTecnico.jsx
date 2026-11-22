@@ -135,7 +135,7 @@ export default function PanelTecnico({ modoOscuro, periodoGlobal = 'Todos', usua
           modoOscuro={modoOscuro} onVolver={() => setSeleccion(null)}
           onEntregada={() => {
             setSeleccion(null);
-            setMensaje('Equipo entregado. Atención cerrada correctamente en el prototipo.');
+            setMensaje('Equipo entregado físicamente. El ticket permanece abierto hasta recibir y revisar la encuesta posterior. Consulta su seguimiento en Historial y consultas.');
           }} />
       </div>
     );

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import PanelSuperusuario from './pages/PanelSuperusuario';
 import InscripcionQR from './components/InscripcionQR';
+import EncuestaSatisfaccion from './components/EncuestaSatisfaccion.jsx';
 
 // Protección básica de rutas del prototipo.
 function RutaProtegida({ children }) {
@@ -35,6 +36,9 @@ export default function App() {
 
         {/* Inscripción pública sin inicio de sesión */}
         <Route path="/inscripcion" element={<InscripcionPublica />} />
+
+        {/* Encuesta pública de demostración, vinculada a una atención local. */}
+        <Route path="/encuesta/:token" element={<EncuestaSatisfaccion />} />
 
         {/* Panel interno protegido */}
         <Route
