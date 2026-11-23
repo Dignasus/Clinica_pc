@@ -16,7 +16,7 @@
   padding: clamp(18px, 4vh, 44px) 0;
   /* Una fotografía de fondo, sin copias en pseudoelementos. */
   background-color: #243c54;
-  background-image: url('https://adfs.inacap.cl/adfs/portal/illustration/illustration.jpg?id=A36BF749E3B8F5BCB7D33EE4612467F6D5F0D2F63A2201CF70B184B0DF3CA0B2');
+  background-image: url('../assets/login-campus.jpg');
   background-size: cover;
   background-position: center 46%;
   background-repeat: no-repeat;
