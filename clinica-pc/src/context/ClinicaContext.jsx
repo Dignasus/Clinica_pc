@@ -5,6 +5,7 @@ import { ClinicaContext } from './clinicaContextBase.js';
 import { encontrarRegionDeComuna } from '../data/regionesChile.js';
 import { clinicaReducer } from './clinicaReducer.js';
 import { corregirModelosQaVisual } from '../utils/qaVisual.js';
+import { asegurarJornadaDemo } from '../utils/jornadas.js';
 
 const STORAGE_KEY = 'clinica-pc-demo-v1';
 const BACKUP_KEY = `${STORAGE_KEY}-backup`;
@@ -21,7 +22,7 @@ function cargarDatos() {
         const roles = esVersionAnterior ? structuredClone(rolesBase) : datos.roles;
         const alias = { matias: 'admin', camila: 'recepcion', cristian: 'tecnico' };
         const rolesCorregidos = { matias: 'superusuario', camila: 'recepcionista', cristian: 'tecnico' };
-        return corregirModelosQaVisual({
+        return asegurarJornadaDemo(corregirModelosQaVisual({
           ...datos,
           roles,
           usuarios: datos.usuarios.map((u) => ({
@@ -37,13 +38,13 @@ function cargarDatos() {
             ...p,
             region: p.region || encontrarRegionDeComuna(p.comuna) || '',
           })),
-        });
+        }));
       }
     }
   } catch (error) {
     console.warn('Error recuperando datos del prototipo:', error);
   }
-  return structuredClone(datosIniciales);
+  return asegurarJornadaDemo(structuredClone(datosIniciales));
 }
 
 export function ClinicaProvider({ children }) {

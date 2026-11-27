@@ -13,6 +13,7 @@ import PanelTecnico from '../components/PanelTecnico';
 import HistorialConsultas from '../components/HistorialConsultas';
 import ParametrosMantenedores from '../components/ParametrosMantenedores';
 import { MODULOS, nombreDeRol, tienePermiso } from '../data/roles.js';
+import { obtenerEstadoJornada } from '../utils/jornadas.js';
 
 export default function PanelSuperusuario() {
   const navigate = useNavigate();
@@ -42,10 +43,11 @@ export default function PanelSuperusuario() {
     ),
   ];
 
+  const periodoActivo = datos.jornadas.find((j) => obtenerEstadoJornada(j) === 'activa')?.periodo;
   const periodoGlobal =
     periodoSeleccionado === 'Todos' || periodosDisponibles.includes(periodoSeleccionado)
       ? periodoSeleccionado
-      : (periodosDisponibles[0] ?? 'Todos');
+      : (periodoActivo ?? periodosDisponibles[0] ?? 'Todos');
 
   const opcionesPeriodo = ['Todos', ...periodosDisponibles];
 
