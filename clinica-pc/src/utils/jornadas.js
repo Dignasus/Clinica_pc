@@ -28,3 +28,18 @@ export const etiquetasEstadoJornada = {
   pendiente_cierre: 'Pendiente de cierre',
   finalizada: 'Finalizada',
 };
+
+// Solo para la demostración local: una jornada activa por día, sin alterar las existentes.
+export function asegurarJornadaDemo(datos, hoy = fechaLocal()) {
+  const id = `DEMO-JOR-${hoy}`;
+  if (datos.jornadas.some((j) => j.fecha === hoy || j.id === id)) return datos;
+  return {
+    ...datos,
+    jornadas: [...datos.jornadas, {
+      id,
+      periodo: `Demostración ${hoy.slice(0, 4)}`,
+      fecha: hoy,
+      estado: 'activa',
+    }],
+  };
+}
