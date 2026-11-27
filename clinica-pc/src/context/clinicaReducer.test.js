@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { clinicaReducer } from './clinicaReducer.js';
 import { datosIniciales } from '../data/datosIniciales.js';
-import { fechaLocal } from '../utils/jornadas.js';
+import { fechaLocal, asegurarJornadaDemo, jornadaPermiteInscripcion, obtenerEstadoJornada } from '../utils/jornadas.js';
 import { estadoTicket, HORAS_HASTA_ENCUESTA } from '../utils/seguimiento.js';
 
 const ATENCION_ID = 'AT-QA-001';
@@ -250,4 +250,32 @@ test('una entrega finalizada no puede duplicarse ni reabrir la custodia', () => 
   assert.equal(atencion(estado).entrega.fecha, fechaOriginal);
   assert.equal(atencion(estado).seguimiento.token, 'qa-unico');
   assert.equal(atencion(estado).custodia, undefined);
+});
+
+
+test('jornada demo: inicializa fecha actual activa y permite inscripción', () => {
+  const anterior = structuredClone(datosIniciales);
+  const salida = asegurarJornadaDemo(anterior);
+  const jornada = salida.jornadas.find((j) => j.id === `DEMO-JOR-${fechaLocal()}`);
+  assert.ok(jornada);
+  assert.equal(obtenerEstadoJornada(jornada), 'activa');
+  assert.equal(jornadaPermiteInscripcion(jornada), true);
+  assert.equal(anterior.jornadas.length, datosIniciales.jornadas.length);
+  assert.equal(asegurarJornadaDemo(salida), salida);
+});
+
+test('jornada demo: respeta jornadas existentes y no reactiva una jornada cerrada', () => {
+  for (const estado of ['programada', 'activa', 'finalizada']) {
+    const datos = { ...structuredClone(datosIniciales), jornadas: [{ id: 'EXISTENTE', periodo: 'Primavera', fecha: fechaLocal(), estado }] };
+    assert.equal(asegurarJornadaDemo(datos), datos);
+  }
+});
+
+test('jornada demo: nuevo día conserva jornadas y registros anteriores', () => {
+  const anterior = asegurarJornadaDemo({ ...structuredClone(datosIniciales), atenciones: [{ id: 'AT-ANTERIOR' }] }, '2026-11-26');
+  const salida = asegurarJornadaDemo(anterior, '2026-11-27');
+  assert.equal(salida.jornadas.length, anterior.jornadas.length + 1);
+  assert.deepEqual(salida.jornadas.slice(0, -1), anterior.jornadas);
+  assert.equal(salida.atenciones, anterior.atenciones);
+  assert.equal(salida.jornadas.at(-1).fecha, '2026-11-27');
 });
